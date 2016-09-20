@@ -11,6 +11,7 @@ public class CatSpawner : MonoBehaviour {
     public TextMesh display;
     float spawnProgress = 0f;
     public Transform spawnLocation;
+    public Door door;
     bool on;
 
     // begin spawning cats
@@ -34,7 +35,7 @@ public class CatSpawner : MonoBehaviour {
         if (on)
         {
             HandleTimer();
-            AnimateCatSpawn();
+            //AnimateCatSpawn();
         }
 	}
 
@@ -60,8 +61,13 @@ public class CatSpawner : MonoBehaviour {
     public void SpawnCat()
     {
         currentCat = (GameObject)GameObject.Instantiate(CatPrefab);
-        currentCat.GetComponent<Collider>().enabled = false;
+        currentCat.GetComponent<Collider>().enabled = true;
         currentCat.GetComponent<Cat>().CatType = Mathf.FloorToInt(Random.Range(1, 11));
+        currentCat.transform.position = spawnLocation.position;
+        if (door != null)
+        {
+            door.RingDoorbell();
+        }
     }
 
     void AnimateCatSpawn()
