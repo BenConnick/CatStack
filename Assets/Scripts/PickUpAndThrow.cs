@@ -32,9 +32,17 @@ public class PickUpAndThrow: MonoBehaviour
 
 		if (joint == null && device.GetTouchDown(SteamVR_Controller.ButtonMask.Trigger))
 		{
+            // no object
 			if (!overlappingObj) return;
-			var go = overlappingObj;
-			//go.transform.position = attachPoint.transform.position;
+
+            // shorthand
+            var go = overlappingObj;
+
+            // rigidbodies only
+            if (go.GetComponent<Rigidbody>() == null) return;
+
+            // immovable tag exception
+            if (go.CompareTag("Immovable")) return;
 
 			joint = go.AddComponent<FixedJoint>();
 			joint.connectedBody = attachPoint;
