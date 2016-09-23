@@ -12,6 +12,7 @@ public class CatSpawner : MonoBehaviour {
     float spawnProgress = 0f;
     public Transform spawnLocation;
     public Door door;
+    public Vector3 SpawnVelocity;
     bool on;
 
     // begin spawning cats
