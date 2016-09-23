@@ -15,6 +15,8 @@ public class Person : MonoBehaviour {
 
     float targetDistanceTolerance = 0.5f;
 
+    Cat heldCat;
+
     // Use this for initialization
     void Start() {
         // get component reference
@@ -66,6 +68,7 @@ public class Person : MonoBehaviour {
     // go to door
     void GoToDoor()
     {
+        heldCat = spawnerComponent.SpawnCat();
         state = PersonState.WALKING_TO_DOOR;
     }
 

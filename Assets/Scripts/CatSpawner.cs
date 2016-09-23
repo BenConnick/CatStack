@@ -59,16 +59,13 @@ public class CatSpawner : MonoBehaviour {
         display.text = text;
     }
 
-    public void SpawnCat()
+    public Cat SpawnCat()
     {
         currentCat = (GameObject)GameObject.Instantiate(CatPrefab);
         currentCat.GetComponent<Collider>().enabled = true;
         currentCat.GetComponent<Cat>().CatType = Mathf.FloorToInt(Random.Range(1, 11));
         currentCat.transform.position = spawnLocation.position;
-        if (door != null)
-        {
-            door.RingDoorbell();
-        }
+        return currentCat;
     }
 
     // launch the cat
