@@ -17,6 +17,8 @@ public class Person : MonoBehaviour {
 
     Cat heldCat;
 
+    FixedJoint joint;
+
     // Use this for initialization
     void Start() {
         // get component reference
@@ -69,6 +71,8 @@ public class Person : MonoBehaviour {
     void GoToDoor()
     {
         heldCat = spawnerComponent.SpawnCat();
+        joint = heldCat.gameObject.AddComponent<FixedJoint>();
+        joint.connectedBody = GetComponent<Rigidbody>();
         state = PersonState.WALKING_TO_DOOR;
     }
 
