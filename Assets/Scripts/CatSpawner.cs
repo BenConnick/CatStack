@@ -8,11 +8,9 @@ public class CatSpawner : MonoBehaviour {
     float timer = 0f;
     GameObject currentCat;
     public float SpawnAnimationDuration = 1f; // set in inspector
-    public TextMesh display;
     float spawnProgress = 0f;
     public Transform spawnLocation;
     public Vector3 spawnOffset;
-    public Door door;
     public Vector3 LaunchVelocity;
     bool on;
 
@@ -49,31 +47,27 @@ public class CatSpawner : MonoBehaviour {
             timer -= SpawnInterval;
             SpawnCat();
         }
-        UpdateDisplay();
-    }
-
-    void UpdateDisplay()
-    {
-        string text = "";
-        
-        text += (SpawnInterval - timer).ToString("00.00");
-        display.text = text;
     }
 
     public Cat SpawnCat()
+    {
+        return SpawnCat(-1);
+    }
+    public Cat SpawnCat(int idx)
     {
         currentCat = (GameObject)GameObject.Instantiate(CatPrefab);
         currentCat.transform.forward = spawnLocation.forward;
         currentCat.GetComponent<Collider>().enabled = true;
         currentCat.GetComponent<Cat>().CatType = Mathf.FloorToInt(Random.Range(1, 11));
+        currentCat.GetComponent<Cat>().ID = idx;
         currentCat.transform.position = spawnLocation.position + spawnOffset;
         return currentCat.GetComponent<Cat>();
     }
 
     // launch the cat
-    public void LaunchCat(GameObject cat)
+    public void LaunchCat(Cat cat)
     {
-        Rigidbody r = currentCat.GetComponent<Rigidbody>();
+        Rigidbody r = cat.GetComponent<Rigidbody>();
         r.AddForce(transform.localToWorldMatrix * LaunchVelocity);
     }
 

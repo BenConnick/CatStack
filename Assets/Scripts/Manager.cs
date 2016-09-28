@@ -4,6 +4,7 @@ using System.Collections;
 public class Manager : MonoBehaviour {
 
     public Material[] CatSkins;
+    public PersonManager personManager;
     public static Manager instance;
     //public TextMesh ScoreCounter;
 

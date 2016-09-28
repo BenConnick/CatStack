@@ -18,9 +18,17 @@ public class PickUpAndThrow: MonoBehaviour
 
 	GameObject overlappingObj;
 
+    Animator animator;
+
+    bool grabbedAnim = false;
+
 	void Awake()
 	{
 		trackedObj = GetComponent<SteamVR_TrackedObject>();
+        if (GetComponentInChildren<Animator>())
+        {
+            animator = GetComponentInChildren<Animator>();
+        }
 	}
 
 	void FixedUpdate()
@@ -30,7 +38,29 @@ public class PickUpAndThrow: MonoBehaviour
 
 		var device = SteamVR_Controller.Input((int)trackedObj.index);
 
-		if (joint == null && device.GetTouchDown(SteamVR_Controller.ButtonMask.Trigger))
+        // ------ Animate Hand ---------
+
+        if (animator != null)
+        {
+            // grab
+            if (!grabbedAnim && device.GetTouchDown(SteamVR_Controller.ButtonMask.Trigger))
+            {
+                animator.SetBool(Animator.StringToHash("Grabbed"), true);
+                grabbedAnim = true;
+
+            }
+            // let go
+            if (grabbedAnim && device.GetTouchUp(SteamVR_Controller.ButtonMask.Trigger))
+            {
+                animator.SetBool(Animator.StringToHash("Grabbed"), false);
+                grabbedAnim = false;
+
+            }
+        }
+
+        // ----- Grabbing Objects
+
+        if (joint == null && device.GetTouchDown(SteamVR_Controller.ButtonMask.Trigger))
 		{
             // no object
 			if (!overlappingObj) return;
@@ -46,8 +76,13 @@ public class PickUpAndThrow: MonoBehaviour
 
 			joint = go.AddComponent<FixedJoint>();
 			joint.connectedBody = attachPoint;
+            //joint.breakForce = 100000;
 
-			rotationTool.GetComponent<SpriteRenderer> ().sprite = GraspingHandSprite;
+            device.TriggerHapticPulse(1000);
+
+            rotationTool.GetComponent<SpriteRenderer> ().sprite = GraspingHandSprite;
+
+            
 		}
 		else if (joint != null && device.GetTouchUp(SteamVR_Controller.ButtonMask.Trigger))
 		{
@@ -78,7 +113,7 @@ public class PickUpAndThrow: MonoBehaviour
 			rigidbody.maxAngularVelocity = rigidbody.angularVelocity.magnitude;
 
 			rigidbody.WakeUp ();
-		}
+        }
 		/* Rotate the held object with the touch pad
 		 * if (device.GetTouchDown(SteamVR_Controller.ButtonMask.Touchpad)) {
 			startRot = rotationTool.transform.rotation;
@@ -101,7 +136,8 @@ public class PickUpAndThrow: MonoBehaviour
 
 	void OnTriggerEnter(Collider col) {
 		overlappingObj = col.gameObject;
-	}
+        SteamVR_Controller.Input((int)trackedObj.index).TriggerHapticPulse(1000);
+    }
 	void OnTriggerExit(Collider col) {
 		if (col.gameObject == overlappingObj) overlappingObj = null;
 	}
