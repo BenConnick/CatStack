@@ -131,6 +131,7 @@ public class Person : MonoBehaviour {
     {
         if (heldCat != null)
         {
+            heldCat.ResetBoredom();
             DestroyImmediate(joint);
             spawnerComponent.LaunchCat(heldCat);
             heldCat = null;
@@ -194,7 +195,7 @@ public class Person : MonoBehaviour {
 
         // if this is hit by a cat
         Cat cat = col.gameObject.GetComponent<Cat>();
-        if (cat != null)
+        if (returning && cat != null)
         {
             // if the cat is the right cat
             if (cat.ID == index)

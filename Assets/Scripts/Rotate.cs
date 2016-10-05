@@ -7,6 +7,7 @@ public class Rotate : MonoBehaviour {
     public Vector3 RotationAxis; // set in inspector
     public float InitialRotationDeg = 0f; // set in inspector
     public float CyclesPerSecond = 1f; // set in inspector
+    public bool useLocalRotation = false; // set in inspector
 
     float timeElapsed = 0;
     float rotationDeg = 0;
@@ -22,7 +23,14 @@ public class Rotate : MonoBehaviour {
         {
             timeElapsed += Time.deltaTime;
             rotationDeg = InitialRotationDeg + CyclesPerSecond * 360 * timeElapsed;
-            transform.rotation = Quaternion.AngleAxis(rotationDeg, RotationAxis);
+            if (useLocalRotation)
+            {
+                transform.localRotation = Quaternion.AngleAxis(rotationDeg, RotationAxis);
+            }
+            else
+            {
+                transform.rotation = Quaternion.AngleAxis(rotationDeg, RotationAxis);
+            }
         }
 	}
 }

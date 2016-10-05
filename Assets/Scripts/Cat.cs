@@ -6,13 +6,14 @@ public class Cat : MonoBehaviour {
     public int CatType = 0;
     public AudioClip MeowSound;
     public AudioClip ImpactSound;
+    public AudioClip PurrSound;
 
     int numCatTypes = 10;
 
     // --- behavior traits ---
     // boredom - cat begins to move around after maxBoredom
     float boredom = 0;
-    float maxBoredom = 10;
+    float maxBoredom = 12;
     // anger
     float angryTimer = 0; // how long the cat will rage
     // determine whether the player is attempting to pet the cat
@@ -23,6 +24,12 @@ public class Cat : MonoBehaviour {
     float meowInterval = 0.5f; // at least half a second
     // meow pitch
     float pitch = 1f;
+
+    // wander in a direction corresponding to an angle on the XZ plane
+    float wanderAngle = 0;
+
+    // hopping cats
+    float hopTimer = 0;
 
     Rigidbody r;
 
@@ -53,7 +60,14 @@ public class Cat : MonoBehaviour {
 	// Update is called once per frame
 	void FixedUpdate () {
         meowTimer += Time.fixedDeltaTime;
-        if (r.velocity.sqrMagnitude > 100000000)
+        boredom += Time.fixedDeltaTime;
+        // bored cats wander
+        if (boredom > maxBoredom)
+        {
+            Wander();
+        }
+        // prevent glitchy rigidbody behavior
+        if (r.velocity.sqrMagnitude > 1000)
         {
             r.velocity = Vector3.zero;
         }
@@ -89,6 +103,18 @@ public class Cat : MonoBehaviour {
         }
     }
 
+    void OnTriggerEnter(Collider col)
+    {
+        if (col.name.Contains("Controller"))
+        {
+            Pet();
+        }
+        else
+        {
+            // do nothing yet
+        }
+    }
+
     public void Meow()
     {
         // if there has been enough time since last meow
@@ -101,8 +127,46 @@ public class Cat : MonoBehaviour {
         }
     }
 
+    public void Purr()
+    {
+        // if there has been enough time since last meow
+        aSource.pitch = pitch;
+        aSource.clip = PurrSound;
+        aSource.Play();
+    }
+
+    public void ResetBoredom()
+    {
+        boredom = 0;
+    }
+
     public void Pet()
     {
+        Purr();
+        if (boredom > 12)
+        {
+            boredom = 12;
+        }
+        boredom -= 4;
+    }
 
+    void Wander()
+    {
+        // randomly change the wander angle in radians
+        wanderAngle += Random.Range(-0.1f, 0.1f);
+
+        // hop every so often
+        hopTimer += Time.fixedDeltaTime;
+
+        // move the cat
+        // yeah yeah the hoptimer limit is hardcoded, I know it sucks
+        if (hopTimer > 0.5f)
+        {
+            print("hop");
+            hopTimer -= 0.5f;
+            Vector3 dir = new Vector3(Mathf.Cos(wanderAngle), 0, Mathf.Sin(wanderAngle));
+            Vector3 force = 50 * (dir + Vector3.up);
+            r.AddForce(force);
+        }
     }
 }

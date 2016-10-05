@@ -58,4 +58,9 @@ public class Manager : MonoBehaviour {
         score += points;
         //ScoreCounter.text = score.ToString();
     }
+
+    public void LogTime()
+    {
+        print("button pressed: " + Time.timeSinceLevelLoad);
+    }
 }
