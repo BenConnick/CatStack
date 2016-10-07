@@ -1,11 +1,13 @@
 ﻿using UnityEngine;
 using System.Collections;
+using System.Collections.Generic;
 
 public class PersonManager : MonoBehaviour {
 
     public Door door;
     public float[] spawnTimes;
     public float[] returnTimes;
+    List<Person> PersonQueue;
 
     public Person PersonPrefab;
 
@@ -15,9 +17,7 @@ public class PersonManager : MonoBehaviour {
     // number of people shorthand
     int n;
 
-    bool waiting = false;
-
-    Person current;
+    bool paused = true;
 
     Person[] people;
 
@@ -28,8 +28,17 @@ public class PersonManager : MonoBehaviour {
 	// Use this for initialization
 	void Start () {
         n = spawnTimes.Length;
+        // create a n-length array
         people = new Person[n];
-	}
+
+        // create the queue for people standing in line for the door
+        PersonQueue = new List<Person>();
+
+        // create the first person
+        SpawnPerson();
+        // wait until next person
+        nextPersonIndex++;
+    }
 
     // create a person
     void SpawnPerson()
@@ -49,27 +58,9 @@ public class PersonManager : MonoBehaviour {
 	void Update () {
         // pause the countdown while waiting 
         // for the player to open the door (temporary)
-        if (waiting)
+        if (paused)
         {
-            // when the player opens the door
-            if (door.Open)
-            {
-                // drop off cat
-                if (!current.Returning)
-                {
-                    // throw the cat into the room
-                    current.TossCat();
-                    // and leave after 2 seconds
-                    current.Leave(2);
-                    // continue timer
-                    waiting = false;
-                }
-                // pick up cat
-                else
-                {
-                    // wait until the player actually gives you the cat
-                }
-            }
+            // do nothing
         }
         else
         {
@@ -81,6 +72,7 @@ public class PersonManager : MonoBehaviour {
             {
                 // create
                 SpawnPerson();
+
                 // wait until next person
                 nextPersonIndex++;
             }
@@ -93,22 +85,41 @@ public class PersonManager : MonoBehaviour {
                 // advance
                 nextReturningPersonIndex++;
             }
+
+            // all done
+            if (nextReturningPersonIndex == n && PersonQueue.Count == 0)
+            {
+                Manager.instance.Win();
+            }
         }
 
 	}
 
-    public void Arrived(Person p)
+    public Vector3 GetQueuedPosition(int idx)
     {
-        // first time, don't show thought bubble
-        if (!p.Returning)
-        {
-            door.RingDoorbell();
-            waiting = true;
-            current = p;
-        } else
-        {
-            waiting = true;
-            p.ShowThoughtBubble();
+        Vector3 pos = Vector3.zero;
+        // the position in line starting at the front (1)
+        int posInLine = 0;
+        foreach (Person p in PersonQueue) {
+            posInLine++;
+            if (p.index == idx)
+            {
+                pos = door.transform.position - Vector3.right * posInLine + Vector3.forward * 0.5f;
+            }
         }
+        return pos;
+    }
+
+    // add a person to the back of the line
+    public void Queue(Person p)
+    {
+        PersonQueue.Add(p);
+    }
+
+    // remove the person in the front of the line
+    public void Dequeue()
+    {
+        PersonQueue.RemoveAt(0);
+        paused = false;
     }
 }

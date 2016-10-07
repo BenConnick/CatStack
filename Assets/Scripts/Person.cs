@@ -9,7 +9,7 @@ public class Person : MonoBehaviour {
 
     CatSpawner spawnerComponent;
 
-    enum PersonState { WALKING_TO_DOOR, WAITING_FOR_RESPONSE, DELAYING, WALKING_AWAY }
+    enum PersonState { WALKING_TO_DOOR, WAITING_FOR_DOOR, IDLE, DELAYING, WALKING_AWAY, STANDING_IN_LINE }
 
     PersonState state;
 
@@ -22,6 +22,8 @@ public class Person : MonoBehaviour {
     FixedJoint joint;
 
     GameObject thoughtBubble;
+
+    Door door;
 
     public SkinnedMeshRenderer catThought;
 
@@ -52,11 +54,20 @@ public class Person : MonoBehaviour {
         // start hidden
         HideThoughtBubble();
 
-        // calculate doormat location
-        doormatLocation = GameObject.Find("Door").transform.position - Vector3.right + Vector3.forward * 0.5f;
+        // set door
+        door = GameObject.Find("Door").GetComponent<Door>();
 
+        // calculate doormat location
+        doormatLocation = door.transform.position - Vector3.right + Vector3.forward * 0.5f;
+
+        // start with a cat
         GetCat();
+
+        // immediately go to the door
         GoToDoor();
+
+        // let the manager know that this person is next in line
+        Manager.instance.personManager.Queue(this);
     }
 
     // Update is called once per frame
@@ -64,12 +75,33 @@ public class Person : MonoBehaviour {
         switch (state) {
             case PersonState.WALKING_TO_DOOR:
                 // returns true if the destination was reached
-                if (WalkingToLocation(doormatLocation))
+                if (WalkingToLocation(Manager.instance.personManager.GetQueuedPosition(index)))
                 {
-                    RingDoorbell();
+                    // if the position is the front of the line
+                    if (CheckDistanceToLocation(doormatLocation))
+                    {
+                        RingDoorbell();
+                    }
                 }
                 break;
-            case PersonState.WAITING_FOR_RESPONSE:
+            case PersonState.WAITING_FOR_DOOR:
+                // when the player opens the door
+                if (door.Open)
+                {
+                    // drop off cat
+                    if (!returning)
+                    {
+                        // throw the cat into the room
+                        TossCat();
+                        // and leave after 2 seconds
+                        Leave(2);
+                    }
+                    // pick up cat
+                    else
+                    {
+                        // wait until the player actually gives you the cat
+                    }
+                }
                 break;
             case PersonState.DELAYING:
                 timer += Time.fixedDeltaTime;
@@ -103,6 +135,19 @@ public class Person : MonoBehaviour {
         return false;
     }
 
+    bool CheckDistanceToLocation(Vector3 location)
+    {
+        // get the vector to the location
+        Vector3 toVec = location - transform.position;
+
+        // if distance is less than tolerance return
+        if (toVec.magnitude < targetDistanceTolerance)
+        {
+            return true;
+        }
+        return false;
+    }
+
     public void GetCat()
     {
         heldCat = spawnerComponent.SpawnCat(index);
@@ -122,8 +167,8 @@ public class Person : MonoBehaviour {
     // ring doorbell
     public void RingDoorbell()
     {
-        state = PersonState.WAITING_FOR_RESPONSE;
-        Manager.instance.personManager.Arrived(this);
+        state = PersonState.WAITING_FOR_DOOR;
+        Arrived(this);
     }
 
     // toss cat
@@ -153,11 +198,13 @@ public class Person : MonoBehaviour {
     public void Leave()
     {
         state = PersonState.WALKING_AWAY;
+        Manager.instance.personManager.Dequeue();
     }
 
     public void Return()
     {
         returning = true;
+        Manager.instance.personManager.Queue(this);
         GoToDoor();
     }
 
@@ -203,6 +250,19 @@ public class Person : MonoBehaviour {
                 // take the cat and leave
                 CatRecieved(cat);
             }
+        }
+    }
+
+    public void Arrived(Person p)
+    {
+        // first time, don't show thought bubble
+        if (!p.Returning)
+        {
+            door.RingDoorbell();
+        }
+        else
+        {
+            ShowThoughtBubble();
         }
     }
 }

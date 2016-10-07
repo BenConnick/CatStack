@@ -162,7 +162,6 @@ public class Cat : MonoBehaviour {
         // yeah yeah the hoptimer limit is hardcoded, I know it sucks
         if (hopTimer > 0.5f)
         {
-            print("hop");
             hopTimer -= 0.5f;
             Vector3 dir = new Vector3(Mathf.Cos(wanderAngle), 0, Mathf.Sin(wanderAngle));
             Vector3 force = 50 * (dir + Vector3.up);

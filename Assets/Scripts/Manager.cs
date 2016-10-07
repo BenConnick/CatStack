@@ -7,6 +7,7 @@ public class Manager : MonoBehaviour {
     public PersonManager personManager;
     public static Manager instance;
     //public TextMesh ScoreCounter;
+    public GameObject[] WinBanners;
 
     bool gameOver = true;
     int score = 0;
@@ -50,6 +51,14 @@ public class Manager : MonoBehaviour {
         foreach (Cat c in cats)
         {
             GameObject.Destroy(c.gameObject);
+        }
+    }
+
+    public void Win()
+    {
+        foreach (GameObject banner in WinBanners)
+        {
+            banner.SetActive(true);
         }
     }
 
