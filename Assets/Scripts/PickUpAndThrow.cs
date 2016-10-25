@@ -135,8 +135,13 @@ public class PickUpAndThrow: MonoBehaviour
 	}
 
 	void OnTriggerEnter(Collider col) {
-		overlappingObj = col.gameObject;
         SteamVR_Controller.Input((int)trackedObj.index).TriggerHapticPulse(1000);
+        // rigidbodies only
+        if (col.GetComponent<Rigidbody>() == null) return;
+        // immovable tag exception
+        if (col.CompareTag("Immovable")) return;
+        overlappingObj = col.gameObject;
+        
     }
 	void OnTriggerExit(Collider col) {
 		if (col.gameObject == overlappingObj) overlappingObj = null;
