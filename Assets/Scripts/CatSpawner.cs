@@ -56,7 +56,7 @@ public class CatSpawner : MonoBehaviour {
     public Cat SpawnCat(int idx)
     {
         currentCat = (GameObject)GameObject.Instantiate(CatPrefab);
-        currentCat.transform.forward = spawnLocation.forward;
+        currentCat.transform.forward = spawnLocation.right;
         currentCat.GetComponent<Collider>().enabled = true;
         currentCat.GetComponent<Cat>().CatType = Mathf.FloorToInt(Random.Range(1, 11));
         currentCat.GetComponent<Cat>().ID = idx;
@@ -68,7 +68,7 @@ public class CatSpawner : MonoBehaviour {
     public void LaunchCat(Cat cat)
     {
         Rigidbody r = cat.GetComponent<Rigidbody>();
-        r.AddForce(transform.localToWorldMatrix * LaunchVelocity);
+        r.AddForce(LaunchVelocity);
     }
 
     // show the cat slowly emerging from the tube

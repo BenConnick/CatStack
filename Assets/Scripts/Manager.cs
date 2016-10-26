@@ -14,6 +14,7 @@ public class Manager : MonoBehaviour {
 
     // Use this for initialization
     void Start () {
+        Physics.IgnoreLayerCollision(LayerMask.NameToLayer("OnlyCat"), LayerMask.NameToLayer("Default"));
 
         // Singleton
 	    if (Manager.instance == null)

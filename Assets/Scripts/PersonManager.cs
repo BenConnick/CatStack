@@ -104,7 +104,7 @@ public class PersonManager : MonoBehaviour {
             posInLine++;
             if (p.index == idx)
             {
-                pos = door.transform.position - Vector3.right * posInLine + Vector3.forward * 0.5f;
+                pos = p.DoormatLoc + Vector3.right - Vector3.right * posInLine;
             }
         }
         return pos;

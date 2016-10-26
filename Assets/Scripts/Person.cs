@@ -15,7 +15,15 @@ public class Person : MonoBehaviour {
 
     Vector3 doormatLocation;
 
-    float targetDistanceTolerance = 0.25f;
+    public Vector3 DoormatLoc
+    {
+        get
+        {
+            return doormatLocation;
+        }
+    }
+
+    float targetDistanceTolerance = 1.02f;
 
     Cat heldCat;
 
@@ -59,6 +67,7 @@ public class Person : MonoBehaviour {
 
         // calculate doormat location
         doormatLocation = door.transform.position - Vector3.right + Vector3.forward * 0.5f;
+        Debug.DrawLine(doormatLocation, Vector3.zero, Color.red, 10);
 
         // start with a cat
         GetCat();
@@ -121,8 +130,10 @@ public class Person : MonoBehaviour {
         // get the vector to the location
         Vector3 toVec = location - transform.position;
 
+        Debug.DrawLine(transform.position, location, Color.blue, 10);
+
         // if distance is less than tolerance return
-        if (toVec.magnitude < targetDistanceTolerance)
+        if (CheckDistanceToLocation(location))
         {
             // arrived at destination
             return true;

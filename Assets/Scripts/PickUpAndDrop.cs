@@ -10,6 +10,7 @@ public class PickUpAndDrop : MonoBehaviour {
 
     Quaternion startRot;
     Vector2 TouchStart;
+    int prevLayer;
 
     public Sprite OpenHandSprite;
     public Sprite GraspingHandSprite;
@@ -44,8 +45,10 @@ public class PickUpAndDrop : MonoBehaviour {
 
             joint = go.AddComponent<FixedJoint>();
             joint.connectedBody = attachPoint;
+            prevLayer = go.layer;
+            go.layer = LayerMask.NameToLayer("OnlyCat");
 
-            rotationTool.GetComponent<SpriteRenderer>().sprite = GraspingHandSprite;
+            //rotationTool.GetComponent<SpriteRenderer>().sprite = GraspingHandSprite;
         }
         else if (joint != null && Input.GetMouseButtonUp(0))
         {
@@ -55,6 +58,7 @@ public class PickUpAndDrop : MonoBehaviour {
             var rigidbody = go.GetComponent<Rigidbody>();
             Object.DestroyImmediate(joint);
             joint = null;
+            go.layer = prevLayer;
 
             // We should probably apply the offset between trackedObj.transform.position
             // and device.transform.pos to insert into the physics sim at the correct
@@ -99,13 +103,14 @@ public class PickUpAndDrop : MonoBehaviour {
 
     void OnTriggerEnter(Collider col)
     {
-        overlappingObj = col.gameObject;
 
         // rigidbodies only
-        if (overlappingObj.GetComponent<Rigidbody>() == null) return;
+        if (col.GetComponent<Rigidbody>() == null) return;
 
         // immovable tag exception
-        if (overlappingObj.CompareTag("Immovable")) return;
+        if (col.CompareTag("Immovable")) return;
+
+        overlappingObj = col.gameObject;
 
         if (ps != null)
         {

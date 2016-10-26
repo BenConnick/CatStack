@@ -9,6 +9,8 @@ public class PickUpAndThrow: MonoBehaviour
 
 	SteamVR_TrackedObject trackedObj;
 	FixedJoint joint;
+    Collider disabledCollider;
+    int prevLayer;
 
 	Quaternion startRot;
 	Vector2 TouchStart;
@@ -42,14 +44,14 @@ public class PickUpAndThrow: MonoBehaviour
 
         if (animator != null)
         {
-            // grab
+            // grab animation
             if (!grabbedAnim && device.GetTouchDown(SteamVR_Controller.ButtonMask.Trigger))
             {
                 animator.SetBool(Animator.StringToHash("Grabbed"), true);
                 grabbedAnim = true;
 
             }
-            // let go
+            // let go animation
             if (grabbedAnim && device.GetTouchUp(SteamVR_Controller.ButtonMask.Trigger))
             {
                 animator.SetBool(Animator.StringToHash("Grabbed"), false);
@@ -74,9 +76,14 @@ public class PickUpAndThrow: MonoBehaviour
             // immovable tag exception
             if (go.CompareTag("Immovable")) return;
 
-			joint = go.AddComponent<FixedJoint>();
-			joint.connectedBody = attachPoint;
-            //joint.breakForce = 100000;
+            // create the joint
+            go.AddComponent<FixedJoint>();
+            // disable collision
+            disabledCollider = go.GetComponent<Collider>();
+            prevLayer = go.layer;
+            go.layer = LayerMask.NameToLayer("OnlyCat");
+            //disabledCollider.enabled = false;
+
 
             device.TriggerHapticPulse(1000);
 
@@ -90,8 +97,11 @@ public class PickUpAndThrow: MonoBehaviour
 
 			var go = joint.gameObject;
 			var rigidbody = go.GetComponent<Rigidbody>();
-			Object.DestroyImmediate(joint);
-			joint = null;
+            Object.DestroyImmediate(joint);
+            go.layer = prevLayer;
+            disabledCollider.enabled = true;
+            joint = null;
+            disabledCollider = null;
 
 			// We should probably apply the offset between trackedObj.transform.position
 			// and device.transform.pos to insert into the physics sim at the correct
@@ -146,4 +156,6 @@ public class PickUpAndThrow: MonoBehaviour
 	void OnTriggerExit(Collider col) {
 		if (col.gameObject == overlappingObj) overlappingObj = null;
 	}
+
+    
 }
