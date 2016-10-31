@@ -55,10 +55,11 @@ public class PickUpAndDrop : MonoBehaviour {
             rotationTool.GetComponent<SpriteRenderer>().sprite = OpenHandSprite;
 
             var go = joint.gameObject;
-            var rigidbody = go.GetComponent<Rigidbody>();
             Object.DestroyImmediate(joint);
             joint = null;
             go.layer = prevLayer;
+
+            var rigidbody = go.GetComponent<Rigidbody>();
 
             // We should probably apply the offset between trackedObj.transform.position
             // and device.transform.pos to insert into the physics sim at the correct

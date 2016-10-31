@@ -65,7 +65,7 @@ public class PickUpAndThrow: MonoBehaviour
         if (joint == null && device.GetTouchDown(SteamVR_Controller.ButtonMask.Trigger))
 		{
             // no object
-			if (!overlappingObj) return;
+			if (overlappingObj == null) return;
 
             // shorthand
             var go = overlappingObj;
@@ -77,38 +77,36 @@ public class PickUpAndThrow: MonoBehaviour
             if (go.CompareTag("Immovable")) return;
 
             // create the joint
-            go.AddComponent<FixedJoint>();
+            joint = go.AddComponent<FixedJoint>();
+            joint.connectedBody = attachPoint;
             // disable collision
-            disabledCollider = go.GetComponent<Collider>();
             prevLayer = go.layer;
             go.layer = LayerMask.NameToLayer("OnlyCat");
-            //disabledCollider.enabled = false;
 
 
             device.TriggerHapticPulse(1000);
 
-            rotationTool.GetComponent<SpriteRenderer> ().sprite = GraspingHandSprite;
+            //rotationTool.GetComponent<SpriteRenderer> ().sprite = GraspingHandSprite;
 
             
 		}
 		else if (joint != null && device.GetTouchUp(SteamVR_Controller.ButtonMask.Trigger))
 		{
-			rotationTool.GetComponent<SpriteRenderer> ().sprite = OpenHandSprite;
-
+			// let go
 			var go = joint.gameObject;
-			var rigidbody = go.GetComponent<Rigidbody>();
             Object.DestroyImmediate(joint);
             go.layer = prevLayer;
-            disabledCollider.enabled = true;
             joint = null;
-            disabledCollider = null;
 
-			// We should probably apply the offset between trackedObj.transform.position
-			// and device.transform.pos to insert into the physics sim at the correct
-			// location, however, we would then want to predict ahead the visual representation
-			// by the same amount we are predicting our render poses.
+            // rigidbody for throw
+            var rigidbody = go.GetComponent<Rigidbody>();
 
-			var origin = trackedObj.origin ? trackedObj.origin : trackedObj.transform.parent;
+            // We should probably apply the offset between trackedObj.transform.position
+            // and device.transform.pos to insert into the physics sim at the correct
+            // location, however, we would then want to predict ahead the visual representation
+            // by the same amount we are predicting our render poses.
+
+            var origin = trackedObj.origin ? trackedObj.origin : trackedObj.transform.parent;
 			if (origin != null)
 			{
 				rigidbody.velocity = origin.TransformVector(device.velocity);
