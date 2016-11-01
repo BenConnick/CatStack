@@ -58,7 +58,9 @@ public class CatSpawner : MonoBehaviour {
         currentCat = (GameObject)GameObject.Instantiate(CatPrefab);
         currentCat.transform.forward = spawnLocation.right;
         currentCat.GetComponent<Collider>().enabled = true;
-        currentCat.GetComponent<Cat>().CatType = Mathf.FloorToInt(Random.Range(1, 11));
+        currentCat.GetComponent<Cat>().CatType = 
+            Mathf.FloorToInt(Random.Range(0, currentCat.GetComponent<Cat>().CatSkins.Length));
+        currentCat.GetComponent<Cat>().SetSkin();
         currentCat.GetComponent<Cat>().ID = idx;
         currentCat.transform.position = spawnLocation.position + spawnOffset;
         return currentCat.GetComponent<Cat>();

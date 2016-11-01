@@ -166,7 +166,7 @@ public class Person : MonoBehaviour {
         joint.connectedBody = GetComponent<Rigidbody>();
 
         // set the skin of the cat thought to match the actual cat
-        catThought.material = Manager.instance.CatSkins[heldCat.CatType];
+        catThought.materials = new Material[] { heldCat.GetComponent<Cat>().CatSkins[heldCat.CatType], heldCat.GetComponent<Cat>().Faces[1] };
     }
 
     // go to door
