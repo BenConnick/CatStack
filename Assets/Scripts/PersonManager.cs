@@ -19,6 +19,8 @@ public class PersonManager : MonoBehaviour {
 
     bool paused = true;
 
+    bool done = false;
+
     Person[] people;
 
     // the index of the next person to be spawned
@@ -87,9 +89,10 @@ public class PersonManager : MonoBehaviour {
             }
 
             // all done
-            if (nextReturningPersonIndex == n && PersonQueue.Count == 0)
+            if (nextReturningPersonIndex == n && PersonQueue.Count == 0 && !done)
             {
                 Manager.instance.Win();
+                done = true;
             }
         }
 

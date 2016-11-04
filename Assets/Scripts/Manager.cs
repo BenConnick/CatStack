@@ -8,6 +8,21 @@ public class Manager : MonoBehaviour {
     //public TextMesh ScoreCounter;
     public GameObject[] WinBanners;
 
+    Transform activeToy;
+
+    public Transform ActiveToy
+    {
+        get
+        {
+            return activeToy;
+        }
+
+        set
+        {
+            activeToy = value;
+        }
+    }
+
     bool gameOver = true;
     int score = 0;
 

@@ -24,7 +24,7 @@ public class PickUpAndDrop : MonoBehaviour {
         ps = GetComponentInChildren<ParticleSystem>();
     }
 
-    void FixedUpdate()
+    protected void FixedUpdate()
     {
         // keep collisions alive
         transform.Translate(Vector3.zero);
@@ -102,7 +102,7 @@ public class PickUpAndDrop : MonoBehaviour {
 		}*/
     }
 
-    void OnTriggerEnter(Collider col)
+    protected void OnTriggerEnter(Collider col)
     {
 
         // rigidbodies only
@@ -118,7 +118,7 @@ public class PickUpAndDrop : MonoBehaviour {
             ps.Play();
         }
     }
-    void OnTriggerExit(Collider col)
+    protected void OnTriggerExit(Collider col)
     {
         if (col.gameObject == overlappingObj) overlappingObj = null;
         if (ps != null)

@@ -90,7 +90,6 @@ public class Door : MonoBehaviour {
             {
                 int direction = handle.velocity.x > 0 ? 1 : -1;
                 angularSpeed = handle.velocity.magnitude * 2 * direction;
-                print("speed: " + angularSpeed);
                 handle.velocity = Vector3.zero;
                 doorSpeedApplied = true;
             }
@@ -161,7 +160,6 @@ public class Door : MonoBehaviour {
     {
         if (!closeSoundPlayed)
         {
-            print(angularSpeed);
             // click
             if (angularSpeed > -10)
             {

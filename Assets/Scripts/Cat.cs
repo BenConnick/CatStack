@@ -17,12 +17,22 @@ public class Cat : MonoBehaviour {
     float boredom = 0;
     float maxBoredom = 12;
     // anger
-    float angryTimer = 0; // how long the cat will rage
+    float pissCounter = 0;
     // lovey timer
     float loveyTimer = 0; // how long the cat will have heart eyes
     // timer for how long the cat has been upside-down
     float flipTimer = 0;
     float waitBeforeFlipDuration = 2;
+    // how long between touches is still considered petting
+    float pettingTimer = 0;
+    float pettingInterval = 2f;
+    // how long before the cat leaps at the toy
+    float attackTimer = 0f;
+    float minAttackWait = 1f;
+    float maxAttackWait = 5f;
+
+    // is a toy visible?
+    bool watchingPrey = false;
 
     // prevent repetitive meows
     float meowTimer;
@@ -32,6 +42,9 @@ public class Cat : MonoBehaviour {
 
     // wander in a direction corresponding to an angle on the XZ plane
     float wanderAngle = 0;
+
+    // the joint that attaches a cat to its prey
+    FixedJoint claws;
 
     // rigidbody
     Rigidbody rbody;
@@ -53,6 +66,8 @@ public class Cat : MonoBehaviour {
     // orientation
     enum ORIENTATION { SIDEWAYS_LEFT, UPSIDE_DOWN, SIDEWAYS_RIGHT, RIGHT_SIDE_UP, FACE_DOWN, ON_BACK }
     ORIENTATION orientation = ORIENTATION.RIGHT_SIDE_UP;
+
+    float turnSpeed = 5;
 
     // mood
     EMOTIONS mood = EMOTIONS.HAPPY;
@@ -99,17 +114,41 @@ public class Cat : MonoBehaviour {
         meowTimer += Time.fixedDeltaTime;
         boredom += Time.fixedDeltaTime;
         loveyTimer -= Time.fixedDeltaTime;
-        angryTimer -= Time.fixedDeltaTime;
+        pettingTimer -= Time.fixedDeltaTime;
+
+        CalculateBoredom();
 
         // STATE MACHINE
         AutoSetMood(); // determine state machine state
         AutoSetFace(); // face correlates with mood
 
         // BEHAVIOR
-        if (boredom > maxBoredom)
+        if (pissCounter > 0)
         {
-            Wander();
+            Rage();
+        } else {
+            if (boredom > maxBoredom)
+            {
+                Wander();
+            }
+            if (watchingPrey)
+            {
+                Stare();
+                if (attackTimer < 0)
+                {
+                    Attack();
+                } else
+                {
+                    attackTimer -= Time.fixedDeltaTime;
+                }
+            }
+            else
+            {
+                LookAround();
+            }
         }
+        
+
         // RIGHT SIDE UP
         CheckOrientation();
         if (flipTimer > waitBeforeFlipDuration)
@@ -118,6 +157,60 @@ public class Cat : MonoBehaviour {
             FlipUpwards();
         }
 	}
+
+    // jump towards the target
+    void Attack()
+    {
+        if (!watchingPrey || Manager.instance.ActiveToy == null) return;
+        watchingPrey = false;
+
+        Vector3 dir = (Manager.instance.ActiveToy.position - transform.position).normalized;
+        Vector3 force = 2.5f * dir;
+        rbody.AddForce(force);
+    }
+
+    // stare at a cat toy
+    void Stare()
+    {
+        // if there is no toy, give up
+        if (Manager.instance.ActiveToy == null)
+            watchingPrey = false;
+        // if not watching, then you are here by mistake
+        if (!watchingPrey)
+            return; 
+
+        // rotate to face the direction of the "prey"
+        transform.forward = Vector3.RotateTowards(
+            transform.forward,
+            Vector3.ProjectOnPlane(Manager.instance.ActiveToy.position - transform.position, Vector3.up),
+            turnSpeed * Time.deltaTime,
+            turnSpeed * Time.deltaTime);
+    }
+
+    // checks to see if there is a cat toy visible
+    void LookAround()
+    {
+        // no distractions
+        if (Manager.instance.ActiveToy == null)
+        {
+            return;
+        }
+
+        // can it see?
+        RaycastHit hit;
+        Ray ray = new Ray(transform.position, Manager.instance.ActiveToy.position - transform.position);
+        Physics.Raycast(ray, out hit);
+
+        // hit?
+        if (hit.transform != null)
+        {
+            if (Vector3.Dot(Manager.instance.ActiveToy.position - transform.position, transform.forward) > 0)
+            {
+                watchingPrey = true;
+                attackTimer = Random.Range(minAttackWait, maxAttackWait);
+            }
+        }
+    }
 
     void CheckOrientation()
     {
@@ -181,10 +274,22 @@ public class Cat : MonoBehaviour {
         SMRenderer.materials = currentMats;
     }
 
+    void CalculateBoredom()
+    {
+        if (pettingTimer > 0 || watchingPrey)
+        {
+            // max 12
+            if (boredom > 12) boredom = 12;
+            boredom -= Time.fixedDeltaTime;
+            // min 0
+            if (boredom < 0) boredom = 0;
+        }
+    }
+
     void AutoSetMood()
     {
         // pissed?
-        if (angryTimer > 0)
+        if (pissCounter > 0)
         {
             mood = EMOTIONS.PISSED;
             return;
@@ -217,18 +322,43 @@ public class Cat : MonoBehaviour {
         SMRenderer.materials = currentMats;
     }
 
+    public void LetGo()
+    {
+        claws.connectedBody = null;
+        Destroy(claws);
+        claws = null;
+    }
+
     void OnCollisionEnter(Collision collision)
     {
+        if (collision.relativeVelocity.sqrMagnitude > 25)
+        {
+            pissCounter = 10;
+        }
+        // grabbed toy
+        if (collision.transform == Manager.instance.ActiveToy)
+        {
+            // grab on to the toy
+            claws = collision.gameObject.AddComponent<FixedJoint>();
+            claws.connectedBody = rbody;
+            StringToy stringToyHandle = FindObjectOfType<StringToy>();
+            if (stringToyHandle != null)
+            {
+                stringToyHandle.BeginTugOfWar();
+            }
+        }
         if (collision.collider.name.Contains("Controller"))
         {
-            Meow();
+            //Meow();
         } else
         {
             // play impact sound
-            //aSource.pitch = collision.relativeVelocity.magnitude;
-            aSource.pitch = 1f;
-            aSource.clip = ImpactSound;
-            aSource.Play();
+            //aSource.pitch = collision.relativeVelocity.magnitude
+            if (!aSource.isPlaying) {
+                aSource.pitch = 1f;
+                aSource.clip = ImpactSound;
+                aSource.Play();
+            }
         }
     }
 
@@ -263,7 +393,6 @@ public class Cat : MonoBehaviour {
         aSource.clip = PurrSound;
         aSource.Play();
         loveyTimer = 1;
-        angryTimer = 0;
     }
 
     public void ResetBoredom()
@@ -273,29 +402,69 @@ public class Cat : MonoBehaviour {
 
     public void Pet()
     {
+        pissCounter -= 10;
         Purr();
-        // max 12
-        if (boredom > 12) boredom = 12;
-        boredom -= 4;
-        // min 0
-        if (boredom < 0) boredom = 0;
+
+        // reset the timer
+        pettingTimer = pettingInterval;
     }
 
     void Wander()
     {
+        float hopInterval = 0.5f;
+
         // randomly change the wander angle in radians
         wanderAngle += Random.Range(-0.1f, 0.1f);
+
+        // rotate to face the direction of hop
+        transform.forward = Vector3.RotateTowards(
+            transform.forward, 
+            Vector3.ProjectOnPlane(rbody.velocity,Vector3.up), 
+            turnSpeed * Time.deltaTime, 
+            turnSpeed * Time.deltaTime);
 
         // hop every so often
         hopTimer += Time.fixedDeltaTime;
 
         // move the cat
-        // yeah yeah the hoptimer limit is hardcoded, I know it sucks
-        if (hopTimer > 0.5f)
+        if (hopTimer > hopInterval)
         {
-            hopTimer -= 0.5f;
+            hopTimer -= hopInterval;
             Vector3 dir = new Vector3(Mathf.Cos(wanderAngle), 0, Mathf.Sin(wanderAngle));
             Vector3 force = 0.5f * (dir + Vector3.up);
+            rbody.AddForce(force);
+        }
+    }
+
+    void Rage()
+    {
+        if (orientation != ORIENTATION.RIGHT_SIDE_UP)
+        {
+            flipTimer += Time.deltaTime; // double speed
+            return;
+        }
+
+        // rotate to face the direction of hop
+        transform.forward = Vector3.RotateTowards(
+            transform.forward,
+            Vector3.ProjectOnPlane(rbody.velocity, Vector3.up),
+            turnSpeed * Time.deltaTime,
+            turnSpeed * Time.deltaTime);
+
+        float hopInterval = 0.5f;
+
+        // randomly change the wander angle in radians
+        wanderAngle += Random.Range(-0.5f, 0.5f);
+
+        // hop every so often
+        hopTimer += Time.fixedDeltaTime;
+
+        // move the cat
+        if (hopTimer > hopInterval)
+        {
+            hopTimer -= hopInterval;
+            Vector3 dir = new Vector3(Mathf.Cos(wanderAngle), 0, Mathf.Sin(wanderAngle));
+            Vector3 force = 1.5f * (dir + Vector3.up);
             rbody.AddForce(force);
         }
     }
@@ -309,8 +478,6 @@ public class Cat : MonoBehaviour {
 
         // max angular velocity
         rbody.maxAngularVelocity = 10000;
-
-        print(orientation);
 
         // rotate
         switch (orientation)

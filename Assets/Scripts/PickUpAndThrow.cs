@@ -7,6 +7,16 @@ public class PickUpAndThrow: MonoBehaviour
 	public Rigidbody attachPoint;
 	public GameObject rotationTool;
 
+    public bool useMouse;
+
+    public bool Grabbing
+    {
+        get
+        {
+            return (joint != null);
+        }
+    }
+
 	SteamVR_TrackedObject trackedObj;
 	FixedJoint joint;
     Collider disabledCollider;
@@ -27,10 +37,7 @@ public class PickUpAndThrow: MonoBehaviour
 	void Awake()
 	{
 		trackedObj = GetComponent<SteamVR_TrackedObject>();
-        if (GetComponentInChildren<Animator>())
-        {
-            animator = GetComponentInChildren<Animator>();
-        }
+        animator = GetComponentInChildren<Animator>();
 	}
 
 	void FixedUpdate()
@@ -60,9 +67,12 @@ public class PickUpAndThrow: MonoBehaviour
             }
         }
 
-        // ----- Grabbing Objects
+        // ----- Grabbing Objects -------
 
-        if (joint == null && device.GetTouchDown(SteamVR_Controller.ButtonMask.Trigger))
+        bool grabBtnPressed = useMouse ? Input.GetMouseButtonDown(0) : device.GetTouchDown(SteamVR_Controller.ButtonMask.Trigger);
+        bool grabBtnReleased = useMouse ? Input.GetMouseButtonUp(0) : device.GetTouchUp(SteamVR_Controller.ButtonMask.Trigger);
+
+        if (joint == null && grabBtnPressed)
 		{
             // no object
 			if (overlappingObj == null) return;
@@ -83,14 +93,15 @@ public class PickUpAndThrow: MonoBehaviour
             prevLayer = go.layer;
             go.layer = LayerMask.NameToLayer("OnlyCat");
 
+            // force feedback
+            if (device != null) { device.TriggerHapticPulse(1000); }
 
-            device.TriggerHapticPulse(1000);
+            // send message to object
+            go.SendMessage("Grabbed", device, SendMessageOptions.DontRequireReceiver);
 
             //rotationTool.GetComponent<SpriteRenderer> ().sprite = GraspingHandSprite;
-
-            
 		}
-		else if (joint != null && device.GetTouchUp(SteamVR_Controller.ButtonMask.Trigger))
+		else if (joint != null && grabBtnReleased)
 		{
 			// let go
 			var go = joint.gameObject;
@@ -106,21 +117,28 @@ public class PickUpAndThrow: MonoBehaviour
             // location, however, we would then want to predict ahead the visual representation
             // by the same amount we are predicting our render poses.
 
-            var origin = trackedObj.origin ? trackedObj.origin : trackedObj.transform.parent;
-			if (origin != null)
-			{
-				rigidbody.velocity = origin.TransformVector(device.velocity);
-				rigidbody.angularVelocity = origin.TransformVector(device.angularVelocity);
-			}
-			else
-			{
-				rigidbody.velocity = device.velocity;
-				rigidbody.angularVelocity = device.angularVelocity;
-			}
+            if (trackedObj != null)
+            {
+
+                var origin = trackedObj.origin ? trackedObj.origin : trackedObj.transform.parent;
+                if (origin != null)
+                {
+                    rigidbody.velocity = origin.TransformVector(device.velocity);
+                    rigidbody.angularVelocity = origin.TransformVector(device.angularVelocity);
+                }
+                else
+                {
+                    rigidbody.velocity = device.velocity;
+                    rigidbody.angularVelocity = device.angularVelocity;
+                }
+
+            }
 
 			rigidbody.maxAngularVelocity = rigidbody.angularVelocity.magnitude;
 
 			rigidbody.WakeUp ();
+
+            go.SendMessage("Released", device, SendMessageOptions.DontRequireReceiver);
         }
 		/* Rotate the held object with the touch pad
 		 * if (device.GetTouchDown(SteamVR_Controller.ButtonMask.Touchpad)) {
