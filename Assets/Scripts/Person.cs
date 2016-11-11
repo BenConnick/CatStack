@@ -67,7 +67,7 @@ public class Person : MonoBehaviour {
 
         // calculate doormat location
         doormatLocation = door.transform.position - Vector3.right + Vector3.forward * 0.5f;
-        Debug.DrawLine(doormatLocation, Vector3.zero, Color.red, 10);
+        //Debug.DrawLine(doormatLocation, Vector3.zero, Color.red, 10);
 
         // start with a cat
         GetCat();
@@ -130,7 +130,7 @@ public class Person : MonoBehaviour {
         // get the vector to the location
         Vector3 toVec = location - transform.position;
 
-        Debug.DrawLine(transform.position, location, Color.blue, 10);
+        //Debug.DrawLine(transform.position, location, Color.blue, 10);
 
         // if distance is less than tolerance return
         if (CheckDistanceToLocation(location))

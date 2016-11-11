@@ -87,4 +87,17 @@ public class Manager : MonoBehaviour {
     {
         print("button pressed: " + Time.timeSinceLevelLoad);
     }
+
+    // 180 the room
+    public void Flip()
+    {
+        Transform t = FindObjectOfType<SteamVR_PlayArea>().transform;
+        if (t.rotation.eulerAngles.y == 90)
+        {
+            t.rotation = Quaternion.Euler(0,270,0);
+        } else
+        {
+            t.rotation = Quaternion.Euler(0, 90, 0);
+        }
+    }
 }

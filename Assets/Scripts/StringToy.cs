@@ -31,7 +31,7 @@ public class StringToy : MonoBehaviour {
 
     public void BeginTugOfWar()
     {
-        rat.GetComponent<SpringJoint>().maxDistance = 2;
+        //rat.GetComponent<SpringJoint>().maxDistance = 2;
         Manager.instance.ActiveToy = null;
     }
 
@@ -40,7 +40,7 @@ public class StringToy : MonoBehaviour {
         if (rat.GetComponent<FixedJoint>() != null)
         {
             rat.GetComponent<FixedJoint>().connectedBody.GetComponent<Cat>().LetGo();
-            rat.GetComponent<SpringJoint>().maxDistance = 0.5f;
+            //rat.GetComponent<SpringJoint>().maxDistance = 0.5f;
         }
     }
 }

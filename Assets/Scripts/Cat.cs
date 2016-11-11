@@ -30,6 +30,10 @@ public class Cat : MonoBehaviour {
     float attackTimer = 0f;
     float minAttackWait = 1f;
     float maxAttackWait = 5f;
+    // how long is a toy entertaining?
+    float toyTimer = 0f;
+    float toyAttentionThreshold = 5f;
+    float maxToyTimer = 10f;
 
     // is a toy visible?
     bool watchingPrey = false;
@@ -115,6 +119,8 @@ public class Cat : MonoBehaviour {
         boredom += Time.fixedDeltaTime;
         loveyTimer -= Time.fixedDeltaTime;
         pettingTimer -= Time.fixedDeltaTime;
+        toyTimer -= Time.fixedDeltaTime;
+        if (toyTimer < 0) toyTimer = 0;
 
         CalculateBoredom();
 
@@ -177,14 +183,22 @@ public class Cat : MonoBehaviour {
             watchingPrey = false;
         // if not watching, then you are here by mistake
         if (!watchingPrey)
-            return; 
+            return;
 
+        // deplete interest in toy
+        toyTimer += 2 * Time.fixedDeltaTime;
+        // attention span depleted
+        if (toyTimer > maxToyTimer)
+        {
+            toyTimer = maxToyTimer;
+            // give up
+            watchingPrey = false;
+            boredom = maxBoredom;
+        }
+
+        //RotateTowardsTarget(Manager.instance.ActiveToy.position - transform.position);
         // rotate to face the direction of the "prey"
-        transform.forward = Vector3.RotateTowards(
-            transform.forward,
-            Vector3.ProjectOnPlane(Manager.instance.ActiveToy.position - transform.position, Vector3.up),
-            turnSpeed * Time.deltaTime,
-            turnSpeed * Time.deltaTime);
+        rbody.AddTorque(new Vector3(turnSpeed * Time.fixedDeltaTime, 0, 0));
     }
 
     // checks to see if there is a cat toy visible
@@ -192,6 +206,12 @@ public class Cat : MonoBehaviour {
     {
         // no distractions
         if (Manager.instance.ActiveToy == null)
+        {
+            return;
+        }
+
+        // do not look for new toys until the attention replenishes
+        if (toyTimer > toyAttentionThreshold)
         {
             return;
         }
@@ -417,11 +437,15 @@ public class Cat : MonoBehaviour {
         wanderAngle += Random.Range(-0.1f, 0.1f);
 
         // rotate to face the direction of hop
-        transform.forward = Vector3.RotateTowards(
+        //RotateTowardsTarget(rbody.velocity);
+
+        
+        
+        /*transform.forward = Vector3.RotateTowards(
             transform.forward, 
             Vector3.ProjectOnPlane(rbody.velocity,Vector3.up), 
             turnSpeed * Time.deltaTime, 
-            turnSpeed * Time.deltaTime);
+            turnSpeed * Time.deltaTime);*/
 
         // hop every so often
         hopTimer += Time.fixedDeltaTime;
@@ -436,6 +460,19 @@ public class Cat : MonoBehaviour {
         }
     }
 
+    void RotateTowardsTarget(Vector3 dir)
+    {
+        // get direction to rotate
+        if (Vector3.Dot(transform.right, dir) > 0.1)
+        {
+            rbody.AddRelativeTorque(new Vector3(0, turnSpeed * Time.fixedDeltaTime, 0));
+        }
+        else if (Vector3.Dot(transform.right, dir) < -0.1)
+        {
+            rbody.AddRelativeTorque(new Vector3(0, -turnSpeed * Time.fixedDeltaTime, 0));
+        }
+    }
+
     void Rage()
     {
         if (orientation != ORIENTATION.RIGHT_SIDE_UP)
@@ -445,11 +482,11 @@ public class Cat : MonoBehaviour {
         }
 
         // rotate to face the direction of hop
-        transform.forward = Vector3.RotateTowards(
+        /*transform.forward = Vector3.RotateTowards(
             transform.forward,
             Vector3.ProjectOnPlane(rbody.velocity, Vector3.up),
             turnSpeed * Time.deltaTime,
-            turnSpeed * Time.deltaTime);
+            turnSpeed * Time.deltaTime);*/
 
         float hopInterval = 0.5f;
 
