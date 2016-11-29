@@ -3,16 +3,16 @@ using System.Collections;
 
 public class Cat : MonoBehaviour {
 
+    #region inspector variables
     public int CatType = 0;
     public AudioClip MeowSound;
     public AudioClip ImpactSound;
     public AudioClip PurrSound;
     public Material[] CatSkins;
     public Material[] Faces;
+    #endregion
 
-    int numCatTypes;
-
-    // --- behavior timers ---
+    #region behavior timers
     // boredom - cat begins to move around after maxBoredom
     float boredom = 0;
     float maxBoredom = 12;
@@ -34,13 +34,19 @@ public class Cat : MonoBehaviour {
     float toyTimer = 0f;
     float toyAttentionThreshold = 5f;
     float maxToyTimer = 10f;
+    // prevent repetitive meows
+    float meowTimer;
+    float meowInterval = 0.5f; // at least half a second
+    #endregion
+
+    #region class variables
+    // number of possible skins
+    int numCatTypes;
 
     // is a toy visible?
     bool watchingPrey = false;
 
-    // prevent repetitive meows
-    float meowTimer;
-    float meowInterval = 0.5f; // at least half a second
+    
     // meow pitch
     float pitch = 1f;
 
@@ -102,8 +108,10 @@ public class Cat : MonoBehaviour {
 
     AudioSource aSource;
 
-	// Use this for initialization
-	void Start () {
+    #endregion
+
+    // Use this for initialization
+    void Start () {
         var mesh = transform.FindChild("Mesh");
         SMRenderer = mesh.GetComponentInChildren<SkinnedMeshRenderer>();
         numCatTypes = CatSkins.Length;
@@ -114,57 +122,72 @@ public class Cat : MonoBehaviour {
 	
 	// Update is called once per frame
 	void FixedUpdate () {
-        // TIMERS
-        meowTimer += Time.fixedDeltaTime;
-        boredom += Time.fixedDeltaTime;
-        loveyTimer -= Time.fixedDeltaTime;
-        pettingTimer -= Time.fixedDeltaTime;
-        toyTimer -= Time.fixedDeltaTime;
-        if (toyTimer < 0) toyTimer = 0;
 
-        CalculateBoredom();
+        // TIMERS
+        UpdateTimers();
+        CalculateBoredom(); // special bounded timer
 
         // STATE MACHINE
         AutoSetMood(); // determine state machine state
         AutoSetFace(); // face correlates with mood
 
-        // BEHAVIOR
-        if (pissCounter > 0)
-        {
-            Rage();
-        } else {
-            if (boredom > maxBoredom)
-            {
-                Wander();
-            }
-            if (watchingPrey)
-            {
-                Stare();
-                if (attackTimer < 0)
-                {
-                    Attack();
-                } else
-                {
-                    attackTimer -= Time.fixedDeltaTime;
-                }
-            }
-            else
-            {
-                LookAround();
-            }
-        }
-        
+        // BEHAVIOR BASED ON MOOD
+        HandleBehaviors();
 
-        // RIGHT SIDE UP
+        // TRY TO BE RIGHT SIDE UP
         CheckOrientation();
-        if (flipTimer > waitBeforeFlipDuration)
-        {
-            flipTimer = 0;
-            FlipUpwards();
-        }
 	}
 
-    // jump towards the target
+    void UpdateTimers()
+    {
+        meowTimer += Time.fixedDeltaTime;
+        //boredom += Time.fixedDeltaTime; disable boredom since it doesn't seem to add to the experience
+        loveyTimer -= Time.fixedDeltaTime;
+        pettingTimer -= Time.fixedDeltaTime;
+        toyTimer -= Time.fixedDeltaTime;
+        if (toyTimer < 0) toyTimer = 0;
+    }
+
+    void HandleBehaviors()
+    {
+        // always watchful
+        LookAround();
+        // prey found?
+        if (watchingPrey)
+        {
+            StalkPreyThenAttack();
+        }
+
+        // mood based behaviors
+        switch (mood)
+        {
+            case EMOTIONS.LOVEY:
+                boredom -= Time.deltaTime * 2;
+                break;
+            case EMOTIONS.PISSED:
+                Rage();
+                break;
+            case EMOTIONS.BORED:
+                Wander();
+                break;
+        }
+    }
+
+    // handles timer for "attack"
+    void StalkPreyThenAttack()
+    {
+        Stare();
+        if (attackTimer < 0)
+        {
+            Attack();
+        }
+        else
+        {
+            attackTimer -= Time.fixedDeltaTime;
+        }
+    }
+
+    // jump towards the current toy
     void Attack()
     {
         if (!watchingPrey || Manager.instance.ActiveToy == null) return;
@@ -196,9 +219,16 @@ public class Cat : MonoBehaviour {
             boredom = maxBoredom;
         }
 
-        //RotateTowardsTarget(Manager.instance.ActiveToy.position - transform.position);
+        // RotateTowardsTarget(Manager.instance.ActiveToy.position - transform.position);
         // rotate to face the direction of the "prey"
-        rbody.AddTorque(new Vector3(turnSpeed * Time.fixedDeltaTime, 0, 0));
+        if (rbody.velocity.sqrMagnitude == 0)
+        {
+            // to vec
+            Vector3 toVec = Manager.instance.ActiveToy.position - transform.position;
+
+            //transform.forward.rotate
+            transform.forward = Vector3.RotateTowards(transform.forward, toVec, Time.deltaTime, 0);
+        }
     }
 
     // checks to see if there is a cat toy visible
@@ -224,7 +254,7 @@ public class Cat : MonoBehaviour {
         // hit?
         if (hit.transform != null)
         {
-            if (Vector3.Dot(Manager.instance.ActiveToy.position - transform.position, transform.forward) > 0)
+            if (Vector3.Dot((Manager.instance.ActiveToy.position - transform.position).normalized, transform.forward) > 0.5f)
             {
                 watchingPrey = true;
                 attackTimer = Random.Range(minAttackWait, maxAttackWait);
@@ -234,8 +264,9 @@ public class Cat : MonoBehaviour {
 
     void CheckOrientation()
     {
-        // only when not held
-        if (GetComponent<FixedJoint>() != null) return;
+        // only when NOT held or holding
+        if (GetComponent<FixedJoint>() != null ||
+            claws != null) return;
 
         // use dot product
         float dot = 0;
@@ -251,10 +282,18 @@ public class Cat : MonoBehaviour {
         {
             // if the cat is not right side up, flip
             flipTimer += Time.fixedDeltaTime;
+            pissCounter += Time.fixedDeltaTime;
+            // flip
+            if (flipTimer > waitBeforeFlipDuration)
+            {
+                flipTimer = 0;
+                FlipUpwards();
+            }
         }
         if (dot < -0.5)
         {
             orientation = ORIENTATION.UPSIDE_DOWN;
+            return;
         }
         // left right
         dot = Vector3.Dot(transform.right, Vector3.up);
@@ -309,7 +348,7 @@ public class Cat : MonoBehaviour {
     void AutoSetMood()
     {
         // pissed?
-        if (pissCounter > 0)
+        if (pissCounter > 1)
         {
             mood = EMOTIONS.PISSED;
             return;
@@ -318,6 +357,12 @@ public class Cat : MonoBehaviour {
         if (loveyTimer > 0)
         {
             mood = EMOTIONS.LOVEY;
+            return;
+        }
+        // bored
+        if (boredom > maxBoredom)
+        {
+            mood = EMOTIONS.BORED;
             return;
         }
         // default
@@ -342,56 +387,23 @@ public class Cat : MonoBehaviour {
         SMRenderer.materials = currentMats;
     }
 
+    void Grab(Collision collision)
+    {
+        // grab on to the toy
+        claws = collision.gameObject.AddComponent<FixedJoint>();
+        claws.connectedBody = rbody;
+        StringToy stringToyHandle = FindObjectOfType<StringToy>();
+        if (stringToyHandle != null)
+        {
+            stringToyHandle.BeginTugOfWar();
+        }
+    }
+
     public void LetGo()
     {
         claws.connectedBody = null;
         Destroy(claws);
         claws = null;
-    }
-
-    void OnCollisionEnter(Collision collision)
-    {
-        if (collision.relativeVelocity.sqrMagnitude > 25)
-        {
-            pissCounter = 10;
-        }
-        // grabbed toy
-        if (collision.transform == Manager.instance.ActiveToy)
-        {
-            // grab on to the toy
-            claws = collision.gameObject.AddComponent<FixedJoint>();
-            claws.connectedBody = rbody;
-            StringToy stringToyHandle = FindObjectOfType<StringToy>();
-            if (stringToyHandle != null)
-            {
-                stringToyHandle.BeginTugOfWar();
-            }
-        }
-        if (collision.collider.name.Contains("Controller"))
-        {
-            //Meow();
-        } else
-        {
-            // play impact sound
-            //aSource.pitch = collision.relativeVelocity.magnitude
-            if (!aSource.isPlaying) {
-                aSource.pitch = 1f;
-                aSource.clip = ImpactSound;
-                aSource.Play();
-            }
-        }
-    }
-
-    void OnTriggerEnter(Collider col)
-    {
-        if (col.name.Contains("Controller"))
-        {
-            Pet();
-        }
-        else
-        {
-            // do nothing yet
-        }
     }
 
     public void Meow()
@@ -439,14 +451,6 @@ public class Cat : MonoBehaviour {
         // rotate to face the direction of hop
         //RotateTowardsTarget(rbody.velocity);
 
-        
-        
-        /*transform.forward = Vector3.RotateTowards(
-            transform.forward, 
-            Vector3.ProjectOnPlane(rbody.velocity,Vector3.up), 
-            turnSpeed * Time.deltaTime, 
-            turnSpeed * Time.deltaTime);*/
-
         // hop every so often
         hopTimer += Time.fixedDeltaTime;
 
@@ -454,8 +458,10 @@ public class Cat : MonoBehaviour {
         if (hopTimer > hopInterval)
         {
             hopTimer -= hopInterval;
-            Vector3 dir = new Vector3(Mathf.Cos(wanderAngle), 0, Mathf.Sin(wanderAngle));
+            //Vector3 dir = new Vector3(Mathf.Cos(wanderAngle), 0, Mathf.Sin(wanderAngle));
+            Vector3 dir = transform.forward;
             Vector3 force = 0.5f * (dir + Vector3.up);
+            rbody.AddRelativeTorque(0, wanderAngle, 0);
             rbody.AddForce(force);
         }
     }
@@ -500,8 +506,10 @@ public class Cat : MonoBehaviour {
         if (hopTimer > hopInterval)
         {
             hopTimer -= hopInterval;
-            Vector3 dir = new Vector3(Mathf.Cos(wanderAngle), 0, Mathf.Sin(wanderAngle));
+            //Vector3 dir = new Vector3(Mathf.Cos(wanderAngle), 0, Mathf.Sin(wanderAngle));
+            Vector3 dir = transform.forward;
             Vector3 force = 1.5f * (dir + Vector3.up);
+            rbody.AddRelativeTorque(0, wanderAngle, 0);
             rbody.AddForce(force);
         }
     }
@@ -537,5 +545,68 @@ public class Cat : MonoBehaviour {
         }
         
         
+    }
+
+    void OnCollisionEnter(Collision collision)
+    {
+        // hit another cat
+        if (collision.gameObject.GetComponent<Cat>())
+        {
+            // hit another cat quickly
+            if (collision.relativeVelocity.sqrMagnitude > 10)
+            {
+                pissCounter = 10;
+            }
+            // already angry cat, auto angry
+            else if (collision.gameObject.GetComponent<Cat>().pissCounter >= 10)
+            {
+                pissCounter = 10;
+            }
+        }
+
+        // angry if hit too hard
+        if (collision.relativeVelocity.sqrMagnitude > 15)
+        {
+            pissCounter = 10;
+        }
+
+        // grabbed toy
+        if (collision.transform == Manager.instance.ActiveToy)
+        {
+            Grab(collision);
+        }
+        // old petting
+        if (collision.collider.name.Contains("Controller"))
+        {
+            //Meow();
+        }
+        else
+        {
+            // play impact sound
+            //aSource.pitch = collision.relativeVelocity.magnitude
+            if (!aSource.isPlaying)
+            {
+                aSource.pitch = 1f;
+                aSource.clip = ImpactSound;
+                aSource.Play();
+            }
+        }
+    }
+
+    void OnTriggerEnter(Collider col)
+    {
+        // touched by player (not held)
+        if (col.name.Contains("Controller") && GetComponent<FixedJoint>() == null)
+        {
+            // pet
+            if (pettingTimer > 0)
+                Pet();
+            pettingTimer = pettingInterval;
+        }
+        if (col.name.Contains("Bed"))
+        {
+            Meow();
+            pissCounter = 0;
+        }
     }
 }

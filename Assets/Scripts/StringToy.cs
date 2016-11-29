@@ -33,6 +33,7 @@ public class StringToy : MonoBehaviour {
     {
         //rat.GetComponent<SpringJoint>().maxDistance = 2;
         Manager.instance.ActiveToy = null;
+
     }
 
     public void EndTugOfWar()

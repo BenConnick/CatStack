@@ -67,10 +67,10 @@ public class CatSpawner : MonoBehaviour {
     }
 
     // launch the cat
-    public void LaunchCat(Cat cat)
+    public void LaunchCat(Cat cat, float speed)
     {
         Rigidbody r = cat.GetComponent<Rigidbody>();
-        r.AddForce(LaunchVelocity);
+        r.AddForce(LaunchVelocity.normalized * speed);
     }
 
     // show the cat slowly emerging from the tube

@@ -63,6 +63,7 @@ public class PersonManager : MonoBehaviour {
         if (paused)
         {
             // do nothing
+            Manager.instance.Reset();
         }
         else
         {

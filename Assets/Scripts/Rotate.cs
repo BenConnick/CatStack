@@ -33,4 +33,9 @@ public class Rotate : MonoBehaviour {
             }
         }
 	}
+
+    public void Reset()
+    {
+        timeElapsed = 0;
+    }
 }

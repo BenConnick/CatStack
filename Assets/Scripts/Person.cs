@@ -7,6 +7,8 @@ public class Person : MonoBehaviour {
 
     public float WalkSpeed;
 
+    float maxTossSpeed = 5;
+
     CatSpawner spawnerComponent;
 
     enum PersonState { WALKING_TO_DOOR, WAITING_FOR_DOOR, IDLE, DELAYING, WALKING_AWAY, STANDING_IN_LINE }
@@ -189,7 +191,7 @@ public class Person : MonoBehaviour {
         {
             heldCat.ResetBoredom();
             DestroyImmediate(joint);
-            spawnerComponent.LaunchCat(heldCat);
+            spawnerComponent.LaunchCat(heldCat, Random.Range(0,maxTossSpeed));
             heldCat = null;
         }
     }

@@ -100,4 +100,14 @@ public class Manager : MonoBehaviour {
             t.rotation = Quaternion.Euler(0, 90, 0);
         }
     }
+
+    // reset clock and sun
+    public void Reset()
+    {
+        Rotate[] rotators = (Rotate[])FindObjectsOfType(typeof(Rotate));
+        foreach (Rotate r in rotators)
+        {
+            r.Reset();
+        }
+    }
 }
