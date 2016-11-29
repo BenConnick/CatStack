@@ -7,7 +7,12 @@ public class Person : MonoBehaviour {
 
     public float WalkSpeed;
 
-    float maxTossSpeed = 5;
+    public AudioClip[] sounds; // set in inspector
+    // 0: correct, 1: incorrect, 2: throw cat
+
+    public SkinnedMeshRenderer catThought;
+
+    float maxTossSpeed = 3f;
 
     CatSpawner spawnerComponent;
 
@@ -25,7 +30,7 @@ public class Person : MonoBehaviour {
         }
     }
 
-    float targetDistanceTolerance = 1.02f;
+    float targetDistanceTolerance = 1.11f;
 
     Cat heldCat;
 
@@ -35,7 +40,9 @@ public class Person : MonoBehaviour {
 
     Door door;
 
-    public SkinnedMeshRenderer catThought;
+    AudioSource a;
+
+    bool soundLocked;
 
     // reusable timer
     float timer;
@@ -56,6 +63,9 @@ public class Person : MonoBehaviour {
 
     // Use this for initialization
     void Start() {
+
+        a = gameObject.AddComponent<AudioSource>();
+
         // get component reference
         spawnerComponent = GetComponent<CatSpawner>();
 
@@ -191,7 +201,10 @@ public class Person : MonoBehaviour {
         {
             heldCat.ResetBoredom();
             DestroyImmediate(joint);
-            spawnerComponent.LaunchCat(heldCat, Random.Range(0,maxTossSpeed));
+            // not actually height, but proportional to it
+            float tossHeight = Random.Range(0, maxTossSpeed);
+            playSound(sounds[2]);
+            spawnerComponent.LaunchCat(heldCat, new Vector3(1,tossHeight,0));
             heldCat = null;
         }
     }
@@ -245,6 +258,9 @@ public class Person : MonoBehaviour {
         joint = heldCat.gameObject.AddComponent<FixedJoint>();
         joint.connectedBody = GetComponent<Rigidbody>();
 
+        // joy
+        playSound(sounds[0], true);
+
         // done, leave
         Leave();
     }
@@ -262,6 +278,10 @@ public class Person : MonoBehaviour {
             {
                 // take the cat and leave
                 CatRecieved(cat);
+            } else
+            {
+                // incorrect cat sound
+                playSound(sounds[1]);
             }
         }
     }
@@ -277,5 +297,36 @@ public class Person : MonoBehaviour {
         {
             ShowThoughtBubble();
         }
+    }
+
+    void playSound(AudioClip sound, bool overrideLock)
+    {
+        if (overrideLock)
+        {
+            a.clip = sound;
+            a.Play();
+        } else
+        {
+            playSound(sound);
+        }
+    }
+
+    void playSound(AudioClip sound)
+    {
+        // repetitive sound guard
+        if (soundLocked) return;
+
+        a.clip = sound;
+        a.Play();
+
+        // lock sound
+        StartCoroutine(BeginSoundCooldown(0.5f));
+    }
+
+    IEnumerator BeginSoundCooldown(float time)
+    {
+        soundLocked = true;
+        yield return new WaitForSeconds(time);
+        soundLocked = false;
     }
 }

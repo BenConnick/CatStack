@@ -28,6 +28,19 @@ public class Manager : MonoBehaviour {
 
     // Use this for initialization
     void Start () {
+
+        PersonManager[] PMs = FindObjectsOfType<PersonManager>();
+        foreach (PersonManager p in PMs)
+        {
+            if (p.isActiveAndEnabled)
+            {
+                personManager = p;
+                break;
+            }
+        }
+
+        
+
         Physics.IgnoreLayerCollision(LayerMask.NameToLayer("OnlyCat"), LayerMask.NameToLayer("Default"));
 
         // Singleton

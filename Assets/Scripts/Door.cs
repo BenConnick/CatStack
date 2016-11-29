@@ -22,6 +22,9 @@ public class Door : MonoBehaviour {
     // the speed the door is moving at
     float angularSpeed;
 
+    // debug
+    public bool doorbellMuted; // set in inspector
+
     // was the handle just released?
     bool doorSpeedApplied = true;
 
@@ -146,6 +149,8 @@ public class Door : MonoBehaviour {
 
     public void RingDoorbell()
     {
+        if (doorbellMuted) return;
+
         if (a == null)
         {
             print("no audio source");

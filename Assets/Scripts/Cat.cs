@@ -282,7 +282,6 @@ public class Cat : MonoBehaviour {
         {
             // if the cat is not right side up, flip
             flipTimer += Time.fixedDeltaTime;
-            pissCounter += Time.fixedDeltaTime;
             // flip
             if (flipTimer > waitBeforeFlipDuration)
             {
@@ -583,12 +582,13 @@ public class Cat : MonoBehaviour {
         else
         {
             // play impact sound
-            //aSource.pitch = collision.relativeVelocity.magnitude
-            if (!aSource.isPlaying)
+            // reuse meow interval for stopping repetitive hit sound
+            if (!aSource.isPlaying && meowTimer > meowInterval/2)
             {
                 aSource.pitch = 1f;
                 aSource.clip = ImpactSound;
                 aSource.Play();
+                meowTimer = 0; // reuse meow timer 
             }
         }
     }
