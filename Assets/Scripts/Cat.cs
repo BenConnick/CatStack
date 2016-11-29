@@ -419,11 +419,13 @@ public class Cat : MonoBehaviour {
 
     public void Purr()
     {
-        // if there has been enough time since last meow
-        aSource.pitch = pitch;
-        aSource.clip = PurrSound;
-        aSource.Play();
-        loveyTimer = 1;
+        if (aSource.clip != PurrSound || !aSource.isPlaying)
+        {
+            aSource.pitch = pitch;
+            aSource.clip = PurrSound;
+            aSource.Play();
+            loveyTimer = 1;
+        }
     }
 
     public void ResetBoredom()
@@ -435,9 +437,15 @@ public class Cat : MonoBehaviour {
     {
         pissCounter -= 10;
         Purr();
+        Bounce();
 
         // reset the timer
         pettingTimer = pettingInterval;
+    }
+
+    void Bounce()
+    {
+        GetComponent<Jiggle>().Begin();
     }
 
     void Wander()

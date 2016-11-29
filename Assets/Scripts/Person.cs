@@ -3,6 +3,8 @@ using System.Collections;
 
 public class Person : MonoBehaviour {
 
+    #region inspector variables
+
     public int index;
 
     public float WalkSpeed;
@@ -10,7 +12,15 @@ public class Person : MonoBehaviour {
     public AudioClip[] sounds; // set in inspector
     // 0: correct, 1: incorrect, 2: throw cat
 
+    public ParticleSystem money;
+
+    public ParticleSystem X_Sign;
+
     public SkinnedMeshRenderer catThought;
+
+    #endregion
+
+    #region class variables
 
     float maxTossSpeed = 3f;
 
@@ -60,6 +70,8 @@ public class Person : MonoBehaviour {
             return returning;
         }
     }
+
+    #endregion
 
     // Use this for initialization
     void Start() {
@@ -260,6 +272,7 @@ public class Person : MonoBehaviour {
 
         // joy
         playSound(sounds[0], true);
+        money.Play();
 
         // done, leave
         Leave();
@@ -282,6 +295,7 @@ public class Person : MonoBehaviour {
             {
                 // incorrect cat sound
                 playSound(sounds[1]);
+                X_Sign.Play();
             }
         }
     }
