@@ -453,7 +453,7 @@ public class Cat : MonoBehaviour {
         float hopInterval = 0.5f;
 
         // randomly change the wander angle in radians
-        wanderAngle += Random.Range(-0.1f, 0.1f);
+        wanderAngle = Random.Range(-Mathf.PI*2, Mathf.PI * 2);
 
         // rotate to face the direction of hop
         //RotateTowardsTarget(rbody.velocity);
@@ -504,7 +504,7 @@ public class Cat : MonoBehaviour {
         float hopInterval = 0.5f;
 
         // randomly change the wander angle in radians
-        wanderAngle += Random.Range(-0.5f, 0.5f);
+        wanderAngle = Random.Range(-Mathf.PI * 2, Mathf.PI * 2);
 
         // hop every so often
         hopTimer += Time.fixedDeltaTime;

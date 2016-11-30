@@ -298,9 +298,12 @@ public class Person : MonoBehaviour {
                 CatRecieved(cat);
             } else
             {
-                // incorrect cat sound
-                playSound(sounds[1]);
-                X_Sign.Play();
+                if (state == PersonState.WAITING_FOR_DOOR && returning)
+                {
+                    // incorrect cat sound
+                    playSound(sounds[1]);
+                    X_Sign.Play();
+                }
             }
         }
     }
