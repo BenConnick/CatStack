@@ -242,6 +242,11 @@ public class Person : MonoBehaviour {
     public void Return()
     {
         returning = true;
+        if (Manager.instance.personManager.GetQueuedPosition(index) != Vector3.zero)
+        {
+            GiveUp();
+            return;
+        }
         Manager.instance.personManager.Queue(this);
         GoToDoor();
     }
@@ -311,6 +316,15 @@ public class Person : MonoBehaviour {
         {
             ShowThoughtBubble();
         }
+    }
+
+    // when the player is too slow
+    public void GiveUp()
+    {
+        // remove from line
+        Manager.instance.personManager.Dequeue();
+        playSound(sounds[1], true); // lose sound
+        Leave();
     }
 
     void playSound(AudioClip sound, bool overrideLock)
