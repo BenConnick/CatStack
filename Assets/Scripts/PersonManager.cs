@@ -5,8 +5,8 @@ using System.Collections.Generic;
 public class PersonManager : MonoBehaviour {
 
     public Door door;
-    public float[] spawnTimes;
-    public float[] returnTimes;
+    float[] spawnTimes;
+    float[] returnTimes;
     List<Person> PersonQueue;
 
     public Person PersonPrefab;
@@ -29,12 +29,18 @@ public class PersonManager : MonoBehaviour {
 
 	// Use this for initialization
 	void Start () {
+        spawnTimes = Manager.instance.CurrentLevel.spawnTimes;
+        returnTimes = Manager.instance.CurrentLevel.returnTimes;
+
         n = spawnTimes.Length;
         // create a n-length array
         people = new Person[n];
 
         // create the queue for people standing in line for the door
         PersonQueue = new List<Person>();
+
+        // ready for schedule
+        Manager.instance.ShowSchedule();
 
         // create the first person
         SpawnPerson();
@@ -99,6 +105,17 @@ public class PersonManager : MonoBehaviour {
 
 	}
 
+    public int GetQueueIndex(int idx)
+    {
+        return PersonQueue.IndexOf(people[idx]);
+    }
+
+    public void RemoveFromQueue(int idx)
+    {
+        PersonQueue.Remove(people[idx]);
+        paused = false;
+    }
+
     public Vector3 GetQueuedPosition(int idx)
     {
         Vector3 pos = Vector3.zero;
@@ -108,7 +125,7 @@ public class PersonManager : MonoBehaviour {
             posInLine++;
             if (p.index == idx)
             {
-                pos = p.DoormatLoc + Vector3.right - Vector3.right * posInLine;
+                pos = p.DoormatLoc + 2 * Vector3.right - 2 * Vector3.right * posInLine;
             }
         }
         return pos;

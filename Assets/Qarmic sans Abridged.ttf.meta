@@ -1,0 +1,20 @@
+fileFormatVersion: 2
+guid: 39b2e100510aafd4ea03bfb458ce5ae6
+timeCreated: 1480555942
+licenseType: Free
+TrueTypeFontImporter:
+  serializedVersion: 4
+  fontSize: 100
+  forceTextureCase: 3
+  characterSpacing: 0
+  characterPadding: 1
+  includeFontData: 1
+  fontNames:
+  - Qarmic sans Abridged
+  fallbackFontReferences: []
+  customCharacters: QWERTYUIOPASDFGHJKLZXCVBNMqwertyuiopasdfghjklzxcvbnm,.!?()1234567890+-&/=
+  fontRenderingMode: 0
+  ascentCalculationMode: 1
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 

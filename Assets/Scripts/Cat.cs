@@ -516,7 +516,7 @@ public class Cat : MonoBehaviour {
             //Vector3 dir = new Vector3(Mathf.Cos(wanderAngle), 0, Mathf.Sin(wanderAngle));
             Vector3 dir = transform.forward;
             Vector3 force = 1.5f * (dir + Vector3.up);
-            rbody.AddRelativeTorque(0, wanderAngle, 0);
+            rbody.AddRelativeTorque(0, wanderAngle / 100, 0);
             rbody.AddForce(force);
         }
     }

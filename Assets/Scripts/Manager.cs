@@ -1,5 +1,6 @@
 ﻿using UnityEngine;
 using System.Collections;
+using UnityEngine.UI;
 
 public class Manager : MonoBehaviour {
 
@@ -7,6 +8,17 @@ public class Manager : MonoBehaviour {
     public static Manager instance;
     //public TextMesh ScoreCounter;
     public GameObject[] WinBanners;
+    public int CurrentLevelNum = 1; // 1-indexed CAUTION!
+    public LevelData[] levels; // 0-indexed
+    public Text[] scheduleCols; // list
+
+    public LevelData CurrentLevel
+    {
+        get
+        {
+            return levels[CurrentLevelNum - 1];
+        }
+    }
 
     Transform activeToy;
 
@@ -27,9 +39,10 @@ public class Manager : MonoBehaviour {
     int score = 0;
 
     // Use this for initialization
-    void Start () {
+    void Start() {
 
         PersonManager[] PMs = FindObjectsOfType<PersonManager>();
+
         foreach (PersonManager p in PMs)
         {
             if (p.isActiveAndEnabled)
@@ -39,28 +52,27 @@ public class Manager : MonoBehaviour {
             }
         }
 
-        
-
         Physics.IgnoreLayerCollision(LayerMask.NameToLayer("OnlyCat"), LayerMask.NameToLayer("Default"));
+        Physics.IgnoreLayerCollision(LayerMask.NameToLayer("OnlyCat"), LayerMask.NameToLayer("SurfaceWorld"));
 
         // Singleton
-	    if (Manager.instance == null)
+        if (Manager.instance == null)
         {
             Manager.instance = this;
         } else
         {
             GameObject.Destroy(gameObject);
         }
-	}
-	
-	// Update is called once per frame
-	void Update () {
+    }
+
+    // Update is called once per frame
+    void Update() {
         // VR disabled, play override
         if (Input.GetKeyDown(KeyCode.P))
         {
             FindObjectOfType<CatSpawner>().Activate();
         }
-	}
+    }
 
     public void PlayGame()
     {
@@ -75,7 +87,7 @@ public class Manager : MonoBehaviour {
     {
         gameOver = true;
         FindObjectOfType<CatSpawner>().Deactivate();
-        Cat[] cats = FindObjectsOfType<Cat> ();
+        Cat[] cats = FindObjectsOfType<Cat>();
         foreach (Cat c in cats)
         {
             GameObject.Destroy(c.gameObject);
@@ -107,7 +119,7 @@ public class Manager : MonoBehaviour {
         Transform t = FindObjectOfType<SteamVR_PlayArea>().transform;
         if (t.rotation.eulerAngles.y == 90)
         {
-            t.rotation = Quaternion.Euler(0,270,0);
+            t.rotation = Quaternion.Euler(0, 270, 0);
         } else
         {
             t.rotation = Quaternion.Euler(0, 90, 0);
@@ -122,5 +134,45 @@ public class Manager : MonoBehaviour {
         {
             r.Reset();
         }
+    }
+
+    // asdf
+    public void ShowSchedule()
+    {
+        // world time goes from 9am to 5pm
+        // game time goes from 0 to 240 s
+        int l = CurrentLevel.returnTimes.Length;
+        float totalTime = 240;
+        float startTime = 9;
+        float numHours = 9;
+        float interval = totalTime / numHours; // turning point for each hour
+
+        string timeStr = "Time\n---------";
+        string dropoffStr = "Dropoff\n---------";
+        string pickupStr = "Pickup\n---------";
+
+        int[] dropPerHour = { 0, 0, 0, 0, 0, 0, 0, 0, 0 };
+        int[] pickPerHour = { 0, 0, 0, 0, 0, 0, 0, 0, 0 };
+
+        // collect number of spawns
+        for (int i = 0; i < CurrentLevel.spawnTimes.Length; i++)
+        {
+            float sTime = CurrentLevel.spawnTimes[i] + 5;
+            dropPerHour[(int)Mathf.Floor(sTime / interval)]++;
+            float dTime = CurrentLevel.returnTimes[i] + 5;
+            pickPerHour[(int)Mathf.Floor(dTime / interval)]++;
+        }
+
+        // strings
+        for (int i = 0; i < numHours; i++)
+        {
+            timeStr += "\n" + (i + startTime) + ":00";
+            dropoffStr += "\n" + dropPerHour[i];
+            pickupStr += "\n" + pickPerHour[i];
+        }
+
+        scheduleCols[0].text = timeStr;
+        scheduleCols[1].text = dropoffStr;
+        scheduleCols[2].text = pickupStr;
     }
 }

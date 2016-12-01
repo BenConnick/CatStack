@@ -57,6 +57,8 @@ public class Person : MonoBehaviour {
     // reusable timer
     float timer;
 
+    bool giveFeedback = false;
+
     // reusable timer limit
     float delay;
 
@@ -133,6 +135,7 @@ public class Person : MonoBehaviour {
                     else
                     {
                         // wait until the player actually gives you the cat
+                        giveFeedback = true;
                     }
                 }
                 break;
@@ -235,8 +238,9 @@ public class Person : MonoBehaviour {
     // leave immediately
     public void Leave()
     {
+        giveFeedback = false;
         state = PersonState.WALKING_AWAY;
-        Manager.instance.personManager.Dequeue();
+        Manager.instance.personManager.RemoveFromQueue(index);
     }
 
     public void Return()
@@ -325,7 +329,7 @@ public class Person : MonoBehaviour {
     public void GiveUp()
     {
         // remove from line
-        Manager.instance.personManager.Dequeue();
+        Manager.instance.personManager.RemoveFromQueue(index);
         playSound(sounds[1], true); // lose sound
         Leave();
     }
