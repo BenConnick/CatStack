@@ -91,8 +91,11 @@ public class PersonManager : MonoBehaviour {
             if (n > nextReturningPersonIndex && 
                 timer > returnTimes[nextReturningPersonIndex])
             {
-                // person come back
-                people[nextReturningPersonIndex].Return();
+                if (!blackList[nextReturningPersonIndex])
+                {
+                    // person come back
+                    people[nextReturningPersonIndex].Return();
+                }
                 // advance
                 nextReturningPersonIndex++;
             }

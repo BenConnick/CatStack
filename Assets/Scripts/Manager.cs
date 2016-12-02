@@ -1,6 +1,7 @@
 ﻿using UnityEngine;
 using System.Collections;
 using UnityEngine.UI;
+using UnityEngine.SceneManagement;
 
 public class Manager : MonoBehaviour {
 
@@ -12,6 +13,18 @@ public class Manager : MonoBehaviour {
     public LevelData[] levels; // 0-indexed
     public Text[] scheduleCols; // list
     public Transform levelSlider;
+    public GameObject playLevel;
+    public AudioClip winSound;
+    public ParticleSystem confetti;
+
+    GameData gData;
+    public GameData gameData
+    {
+        get
+        {
+            return gData;
+        }
+    }
     Transform player;
     public Transform Player
     {
@@ -54,6 +67,8 @@ public class Manager : MonoBehaviour {
 
     bool gameOver = true;
     int score = 0;
+    int selectedLevel = 1;
+    AudioSource audioSource;
 
     // Use this for initialization
     void Start() {
@@ -66,6 +81,14 @@ public class Manager : MonoBehaviour {
         {
             GameObject.Destroy(gameObject);
         }
+
+        // game data
+        gData = FindObjectOfType<GameData>();
+        // this level
+        selectedLevel = gData.currentLevel;
+        CurrentLevelNum = gData.currentLevel ;
+        // sync slider
+        levelSlider.position = levelSlider.position + (CurrentLevelNum-1) * Vector3.right * 0.5f;
 
         // find player transform
         player = Camera.main.transform.parent;
@@ -86,6 +109,8 @@ public class Manager : MonoBehaviour {
 
         Physics.IgnoreLayerCollision(LayerMask.NameToLayer("OnlyCat"), LayerMask.NameToLayer("Default"));
         Physics.IgnoreLayerCollision(LayerMask.NameToLayer("OnlyCat"), LayerMask.NameToLayer("SurfaceWorld"));
+
+        audioSource = gameObject.AddComponent<AudioSource>();
 
         
     }
@@ -121,10 +146,17 @@ public class Manager : MonoBehaviour {
 
     public void Win()
     {
+        // text
         foreach (GameObject banner in WinBanners)
         {
             banner.SetActive(true);
         }
+        // confetti
+        confetti.Play();
+        // trumpets
+        audioSource.clip = winSound;
+        audioSource.Play();
+        gameData.numLevelsUnlocked++;
     }
 
     public void AddPoints(int points)
@@ -204,10 +236,30 @@ public class Manager : MonoBehaviour {
     // changes selected level back or forward
     public void ChangeSelectedLevel(bool next)
     {
-        float dir = next ? 0.5f : -0.5f;
-        Vector3 start = levelSlider.position;
-        Vector3 end = levelSlider.position + dir * Vector3.right;
-        StartCoroutine(lerpPosition(levelSlider, start, end, 20));
+        // if in range
+        if ((next && selectedLevel < 5) || (!next && selectedLevel > 1))
+        {
+            float dir = next ? 0.5f : -0.5f;
+            selectedLevel += (int)(dir * 2);
+            Vector3 start = levelSlider.position;
+            Vector3 end = levelSlider.position + dir * Vector3.right;
+            StartCoroutine(lerpPosition(levelSlider, start, end, 20));
+            if (selectedLevel <= gData.numLevelsUnlocked)
+            {
+                playLevel.SetActive(true);
+            } else
+            {
+                playLevel.SetActive(false);
+            }
+        }
+    }
+
+    public void LoadSelectedLevel()
+    {
+        // set level
+        gameData.currentLevel = selectedLevel;
+        // reload all
+        SceneManager.LoadScene(0);
     }
 
     IEnumerator lerpPosition(Transform tf, Vector3 startPos, Vector3 endPos, int duration)

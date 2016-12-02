@@ -226,6 +226,7 @@ public class Person : MonoBehaviour {
             float tossHeight = Random.Range(0, maxTossSpeed);
             playSound(sounds[2]);
             spawnerComponent.LaunchCat(heldCat, new Vector3(1,tossHeight,0));
+            heldCat.BelongsToPlayer = true; // start checking if the cat is out of bounds
             heldCat = null;
         }
     }
@@ -295,6 +296,9 @@ public class Person : MonoBehaviour {
         {
                 Manager.instance.tutorialManager.CatRecieved();
         }
+
+        // bounds checking
+        heldCat.BelongsToPlayer = false; // stop checking if the cat is out of bounds
 
         // done, leave
         Leave();

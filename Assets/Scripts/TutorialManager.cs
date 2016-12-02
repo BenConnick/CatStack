@@ -3,7 +3,7 @@ using System.Collections;
 
 public class TutorialManager : MonoBehaviour {
 
-    enum Lessons { OPEN_DOOR, PET_CAT, RETURN_CAT }
+    enum Lessons { OPEN_DOOR, PET_CAT, RETURN_CAT, LEVEL_SELECT }
     int lessonNum = 0;
     bool tutorialRunning = false;
     bool catPet = false;
@@ -126,13 +126,21 @@ public class TutorialManager : MonoBehaviour {
     {
         if (lessonNum == (int)Lessons.RETURN_CAT)
         {
-            NextPart();
+            HideAll();
         }
     }
 
     public void PersonReturned()
     {
         if (lessonNum == (int)Lessons.PET_CAT && catPet)
+        {
+            NextPart();
+        }
+    }
+
+    public void LevelComplete()
+    {
+        if (lessonNum == (int)Lessons.RETURN_CAT)
         {
             NextPart();
         }

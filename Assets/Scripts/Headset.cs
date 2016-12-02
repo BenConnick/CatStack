@@ -5,9 +5,13 @@ public class Headset : MonoBehaviour {
 
     Rigidbody r;
     bool active = false;
+    bool grabbed = false;
+
+    Vector3 normalScale;
 
 	// Use this for initialization
 	void Start () {
+        normalScale = transform.localScale;
         r = GetComponent<Rigidbody>();
 	}
 	
@@ -19,6 +23,7 @@ public class Headset : MonoBehaviour {
     public void Activate()
     {
         r.isKinematic = true;
+        transform.localScale = normalScale * 2;
         transform.parent = Camera.main.transform;
         Manager.instance.Player.position = new Vector3(Manager.instance.Player.position.x, 10, Manager.instance.Player.position.z);
         Camera.main.cullingMask = ~(1 << 10);
@@ -30,18 +35,20 @@ public class Headset : MonoBehaviour {
         Manager.instance.Player.position = new Vector3(Manager.instance.Player.position.x, 0, Manager.instance.Player.position.z);
         Camera.main.cullingMask = ~(1 << 11);
         r.isKinematic = false;
+        transform.localScale = normalScale;
         transform.parent = null;
         active = false;
     }
 
     public void Grabbed()
     {
-        print("grabbed");
+        grabbed = true;
         gameObject.layer = LayerMask.NameToLayer("SurfaceWorld");
     }
 
     public void Released()
     {
+        grabbed = false;
         if (active)
         {
             transform.localPosition = new Vector3(0.1f, 0, 0);
@@ -51,13 +58,14 @@ public class Headset : MonoBehaviour {
 
     private void OnTriggerEnter(Collider other)
     {
+        if (!grabbed) return;
         if (other.CompareTag("MainCamera") || other.CompareTag("Player"))
         {
             Activate();
         }
         if (other.name.ToLower().Contains("controller"))
         {
-            gameObject.layer = LayerMask.NameToLayer("Default");
+            show();
         }
     }
 
@@ -69,12 +77,22 @@ public class Headset : MonoBehaviour {
         }
         if (other.name.ToLower().Contains("controller"))
         {
-            gameObject.layer = LayerMask.NameToLayer("SurfaceWorld");
+            hideActiveOnly();
         }
     }
 
     private void OnCollisionEnter(Collision collision)
     {
         
+    }
+
+    public void show()
+    {
+        gameObject.layer = LayerMask.NameToLayer("Default");
+    }
+
+    public void hideActiveOnly()
+    {
+        gameObject.layer = LayerMask.NameToLayer("SurfaceWorld");
     }
 }

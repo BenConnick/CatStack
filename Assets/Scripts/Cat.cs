@@ -108,6 +108,19 @@ public class Cat : MonoBehaviour {
 
     AudioSource aSource;
 
+    bool belongsToPlayer = false;
+    public bool BelongsToPlayer
+    {
+        get
+        {
+            return belongsToPlayer;
+        }
+        set
+        {
+            belongsToPlayer = value;
+        }
+    }
+
     #endregion
 
     // Use this for initialization
@@ -616,13 +629,13 @@ public class Cat : MonoBehaviour {
             Meow();
             pissCounter = 0;
         }
-    }
 
-    private void OnTriggerExit(Collider other)
-    {
-        if (other.name == "CatBounds")
+        if (belongsToPlayer && col.name.Contains("CatBounds"))
         {
-            Manager.instance.personManager.CatLost(id);
+            print("cat lost! " + id);
+            // move back to center
+            transform.position = new Vector3(0, 2, 0);
+            //Manager.instance.personManager.CatLost(id);
         }
     }
 }
