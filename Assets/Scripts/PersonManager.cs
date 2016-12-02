@@ -7,6 +7,7 @@ public class PersonManager : MonoBehaviour {
     public Door door;
     float[] spawnTimes;
     float[] returnTimes;
+    bool[] blackList;
     List<Person> PersonQueue;
 
     public Person PersonPrefab;
@@ -35,6 +36,7 @@ public class PersonManager : MonoBehaviour {
         n = spawnTimes.Length;
         // create a n-length array
         people = new Person[n];
+        blackList = new bool[n];
 
         // create the queue for people standing in line for the door
         PersonQueue = new List<Person>();
@@ -142,5 +144,19 @@ public class PersonManager : MonoBehaviour {
     {
         PersonQueue.RemoveAt(0);
         paused = false;
+    }
+
+    // when a cat goes out of bounds
+    public void CatLost(int idx)
+    {
+        // if the person is in the queue
+        foreach (Person p in PersonQueue)
+        {
+            if (p == people[idx])
+            {
+                RemoveFromQueue(idx);
+                break;
+            }
+        }
     }
 }

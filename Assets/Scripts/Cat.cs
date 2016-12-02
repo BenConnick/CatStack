@@ -617,4 +617,12 @@ public class Cat : MonoBehaviour {
             pissCounter = 0;
         }
     }
+
+    private void OnTriggerExit(Collider other)
+    {
+        if (other.name == "CatBounds")
+        {
+            Manager.instance.personManager.CatLost(id);
+        }
+    }
 }

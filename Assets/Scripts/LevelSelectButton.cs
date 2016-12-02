@@ -3,6 +3,8 @@ using System.Collections;
 
 public class LevelSelectButton : MonoBehaviour {
 
+    public bool right; // set in inspector
+
 	// Use this for initialization
 	void Start () {
 	
@@ -12,4 +14,9 @@ public class LevelSelectButton : MonoBehaviour {
 	void Update () {
 	
 	}
+
+    void Grabbed()
+    {
+        Manager.instance.ChangeSelectedLevel(right);
+    }
 }

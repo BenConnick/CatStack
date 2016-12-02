@@ -136,6 +136,12 @@ public class Person : MonoBehaviour {
                     {
                         // wait until the player actually gives you the cat
                         giveFeedback = true;
+                        // tutorial
+                        if (Manager.instance.CurrentLevelNum == 1 &&
+                            Manager.instance.tutorialManager.TutorialRunning)
+                        {
+                            Manager.instance.tutorialManager.PersonReturned();
+                        }
                     }
                 }
                 break;
@@ -282,6 +288,13 @@ public class Person : MonoBehaviour {
         // joy
         playSound(sounds[0], true);
         money.Play();
+
+        // tutorial
+        if (Manager.instance.CurrentLevelNum == 1 &&
+            Manager.instance.tutorialManager.TutorialRunning)
+        {
+                Manager.instance.tutorialManager.CatRecieved();
+        }
 
         // done, leave
         Leave();

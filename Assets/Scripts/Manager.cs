@@ -11,6 +11,23 @@ public class Manager : MonoBehaviour {
     public int CurrentLevelNum = 1; // 1-indexed CAUTION!
     public LevelData[] levels; // 0-indexed
     public Text[] scheduleCols; // list
+    public Transform levelSlider;
+    Transform player;
+    public Transform Player
+    {
+        get
+        {
+            return player;
+        }
+    }
+    TutorialManager tutManager;
+    public TutorialManager tutorialManager
+    {
+        get
+        {
+            return tutManager;
+        }
+    }
 
     public LevelData CurrentLevel
     {
@@ -40,6 +57,21 @@ public class Manager : MonoBehaviour {
 
     // Use this for initialization
     void Start() {
+        // Singleton
+        if (Manager.instance == null)
+        {
+            Manager.instance = this;
+        }
+        else
+        {
+            GameObject.Destroy(gameObject);
+        }
+
+        // find player transform
+        player = Camera.main.transform.parent;
+
+        // component
+        tutManager = GetComponent<TutorialManager>();
 
         PersonManager[] PMs = FindObjectsOfType<PersonManager>();
 
@@ -55,14 +87,7 @@ public class Manager : MonoBehaviour {
         Physics.IgnoreLayerCollision(LayerMask.NameToLayer("OnlyCat"), LayerMask.NameToLayer("Default"));
         Physics.IgnoreLayerCollision(LayerMask.NameToLayer("OnlyCat"), LayerMask.NameToLayer("SurfaceWorld"));
 
-        // Singleton
-        if (Manager.instance == null)
-        {
-            Manager.instance = this;
-        } else
-        {
-            GameObject.Destroy(gameObject);
-        }
+        
     }
 
     // Update is called once per frame
@@ -174,5 +199,25 @@ public class Manager : MonoBehaviour {
         scheduleCols[0].text = timeStr;
         scheduleCols[1].text = dropoffStr;
         scheduleCols[2].text = pickupStr;
+    }
+
+    // changes selected level back or forward
+    public void ChangeSelectedLevel(bool next)
+    {
+        float dir = next ? 0.5f : -0.5f;
+        Vector3 start = levelSlider.position;
+        Vector3 end = levelSlider.position + dir * Vector3.right;
+        StartCoroutine(lerpPosition(levelSlider, start, end, 20));
+    }
+
+    IEnumerator lerpPosition(Transform tf, Vector3 startPos, Vector3 endPos, int duration)
+    {
+        float timer = 0;
+        while (timer < duration)
+        {
+            timer++;
+            tf.position = Vector3.Lerp(startPos, endPos, timer / duration);
+            yield return new WaitForEndOfFrame();
+        }
     }
 }
