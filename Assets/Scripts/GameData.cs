@@ -3,23 +3,23 @@ using System.Collections;
 
 public class GameData : MonoBehaviour {
 
+    public static GameData instance;
     public int currentLevel = 1;
     public int numLevels = 5;
     public int numLevelsUnlocked = 1;
 
-	// Use this for initialization
-	void Start () {
-        GameData other = FindObjectOfType<GameData>();
-        if (other != null)
+    public void Start()
+    {
+        // Singleton
+        if (GameData.instance == null)
         {
-            Destroy(this);
+            GameData.instance = this;
+            // preserve this object
+            DontDestroyOnLoad(this);
         }
-        // preserve this object
-        DontDestroyOnLoad(gameObject);
-	}
-	
-	// Update is called once per frame
-	void Update () {
-	
-	}
+        else
+        {
+            GameObject.Destroy(gameObject);
+        }
+    }
 }

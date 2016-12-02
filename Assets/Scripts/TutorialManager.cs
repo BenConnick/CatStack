@@ -25,6 +25,7 @@ public class TutorialManager : MonoBehaviour {
 
     // Use this for initialization
     void Start () {
+        HideAll();
 	    if (Manager.instance.CurrentLevelNum == 1)
         {
             BeginTutorial();
@@ -33,7 +34,7 @@ public class TutorialManager : MonoBehaviour {
 	
 	// Update is called once per frame
 	void Update () {
-        if (CheckCondition()) { NextPart(); }
+        if (tutorialRunning && CheckCondition()) { NextPart(); }
 	}
 
     // begin the tutorial

@@ -16,15 +16,8 @@ public class Manager : MonoBehaviour {
     public GameObject playLevel;
     public AudioClip winSound;
     public ParticleSystem confetti;
+    public GameObject gameDataPrefab;
 
-    GameData gData;
-    public GameData gameData
-    {
-        get
-        {
-            return gData;
-        }
-    }
     Transform player;
     public Transform Player
     {
@@ -83,10 +76,13 @@ public class Manager : MonoBehaviour {
         }
 
         // game data
-        gData = FindObjectOfType<GameData>();
+        if (GameData.instance == null)
+        {
+            GameObject.Instantiate(gameDataPrefab);
+        }
         // this level
-        selectedLevel = gData.currentLevel;
-        CurrentLevelNum = gData.currentLevel ;
+        selectedLevel = GameData.instance.currentLevel;
+        CurrentLevelNum = GameData.instance.currentLevel ;
         // sync slider
         levelSlider.position = levelSlider.position + (CurrentLevelNum-1) * Vector3.right * 0.5f;
 
@@ -151,12 +147,17 @@ public class Manager : MonoBehaviour {
         {
             banner.SetActive(true);
         }
+        //tutorial
+        tutManager.LevelComplete();
         // confetti
         confetti.Play();
         // trumpets
         audioSource.clip = winSound;
         audioSource.Play();
-        gameData.numLevelsUnlocked++;
+        // unlock new level
+        GameData.instance.numLevelsUnlocked++;
+        // change visuals
+        levelSlider.GetComponent<LevelSlider>().Refresh();
     }
 
     public void AddPoints(int points)
@@ -244,7 +245,7 @@ public class Manager : MonoBehaviour {
             Vector3 start = levelSlider.position;
             Vector3 end = levelSlider.position + dir * Vector3.right;
             StartCoroutine(lerpPosition(levelSlider, start, end, 20));
-            if (selectedLevel <= gData.numLevelsUnlocked)
+            if (selectedLevel <= GameData.instance.numLevelsUnlocked)
             {
                 playLevel.SetActive(true);
             } else
@@ -257,7 +258,7 @@ public class Manager : MonoBehaviour {
     public void LoadSelectedLevel()
     {
         // set level
-        gameData.currentLevel = selectedLevel;
+        GameData.instance.currentLevel = selectedLevel;
         // reload all
         SceneManager.LoadScene(0);
     }

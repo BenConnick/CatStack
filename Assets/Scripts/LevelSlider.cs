@@ -8,10 +8,15 @@ public class LevelSlider : MonoBehaviour {
 
     // Use this for initialization
     void Start () {
+        Refresh();
+	}
+
+    public void Refresh()
+    {
         Clear();
         Fill();
-        
-	}
+    }
+
 	
 	// Update is called once per frame
 	void Update () {
@@ -32,7 +37,7 @@ public class LevelSlider : MonoBehaviour {
         for (var i=0; i<numLevels; i++)
         {
             GameObject newCat = null;
-            if (i<Manager.instance.gameData.numLevelsUnlocked)
+            if (i<GameData.instance.numLevelsUnlocked)
             {
                 newCat = (GameObject)GameObject.Instantiate(UnlockedPrefab, transform, false);
             } else
