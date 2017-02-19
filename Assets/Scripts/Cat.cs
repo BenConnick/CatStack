@@ -8,8 +8,10 @@ public class Cat : MonoBehaviour {
     public AudioClip MeowSound;
     public AudioClip ImpactSound;
     public AudioClip PurrSound;
+    public AudioClip HissSound;
     public Material[] CatSkins;
     public Material[] Faces;
+    public float rollForce = 2200;
     #endregion
 
     #region behavior timers
@@ -46,6 +48,8 @@ public class Cat : MonoBehaviour {
     // is a toy visible?
     bool watchingPrey = false;
 
+    // debug
+    bool debugOn = true;
     
     // meow pitch
     float pitch = 1f;
@@ -65,13 +69,13 @@ public class Cat : MonoBehaviour {
     Material[] currentMats;
 
     // all faces
-    enum FACE { LOVEY, HAPPY, PISSED };
+    enum FACE { LOVEY, HAPPY, PISSED, ASLEEP };
 
     // hopping cats
     float hopTimer = 0;
 
     // emotions
-    enum EMOTIONS {  LOVEY, HAPPY, BORED, PISSED }
+    enum EMOTIONS {  LOVEY, HAPPY, BORED, PISSED, ASLEEP }
 
     // orientation
     enum ORIENTATION { SIDEWAYS_LEFT, UPSIDE_DOWN, SIDEWAYS_RIGHT, RIGHT_SIDE_UP, FACE_DOWN, ON_BACK }
@@ -136,12 +140,34 @@ public class Cat : MonoBehaviour {
 	// Update is called once per frame
 	void FixedUpdate () {
 
+        // DEBUG
+        if (debugOn)
+        {
+            Color debugColor = Color.green;
+            switch (mood)
+            {
+                case (EMOTIONS.ASLEEP):
+                    debugColor = Color.blue;
+                    break;
+                case (EMOTIONS.BORED):
+                    debugColor = Color.magenta;
+                    break;
+                case (EMOTIONS.LOVEY):
+                    debugColor = Color.red;
+                    break;
+                case (EMOTIONS.PISSED):
+                    debugColor = Color.yellow;
+                    break;
+            }
+            Debug.DrawRay(transform.position, Vector3.up, debugColor);
+        }
+
         // TIMERS
         UpdateTimers();
         CalculateBoredom(); // special bounded timer
 
         // STATE MACHINE
-        AutoSetMood(); // determine state machine state
+        //AutoSetMood(); // determine state machine state
         AutoSetFace(); // face correlates with mood
 
         // BEHAVIOR BASED ON MOOD
@@ -154,7 +180,7 @@ public class Cat : MonoBehaviour {
     void UpdateTimers()
     {
         meowTimer += Time.fixedDeltaTime;
-        //boredom += Time.fixedDeltaTime; disable boredom since it doesn't seem to add to the experience
+        boredom += 5 * Time.fixedDeltaTime;
         loveyTimer -= Time.fixedDeltaTime;
         pettingTimer -= Time.fixedDeltaTime;
         toyTimer -= Time.fixedDeltaTime;
@@ -281,6 +307,12 @@ public class Cat : MonoBehaviour {
         if (GetComponent<FixedJoint>() != null ||
             claws != null) return;
 
+        // only when NOT MOVING
+        if (GetComponent<Rigidbody>().velocity.sqrMagnitude > 0)
+        {
+            return;
+        }
+
         // use dot product
         float dot = 0;
 
@@ -351,7 +383,7 @@ public class Cat : MonoBehaviour {
         {
             // max 12
             if (boredom > 12) boredom = 12;
-            boredom -= Time.fixedDeltaTime;
+            //boredom -= Time.fixedDeltaTime;
             // min 0
             if (boredom < 0) boredom = 0;
         }
@@ -362,6 +394,10 @@ public class Cat : MonoBehaviour {
         // pissed?
         if (pissCounter > 1)
         {
+            if (mood != EMOTIONS.PISSED)
+            {
+                Meow();
+            }
             mood = EMOTIONS.PISSED;
             return;
         }
@@ -372,7 +408,7 @@ public class Cat : MonoBehaviour {
             return;
         }
         // bored
-        if (boredom > maxBoredom)
+        if (boredom >= maxBoredom)
         {
             mood = EMOTIONS.BORED;
             return;
@@ -383,13 +419,32 @@ public class Cat : MonoBehaviour {
 
     void AutoSetFace()
     {
+        switch(mood)
+        {
+            case EMOTIONS.LOVEY:
+                SetFace(FACE.LOVEY);
+                break;
+            case EMOTIONS.PISSED:
+                SetFace(FACE.PISSED);
+                break;
+            case EMOTIONS.ASLEEP:
+                SetFace(FACE.ASLEEP);
+                break;
+            case EMOTIONS.BORED:
+            default:
+                SetFace(FACE.HAPPY);
+                break;
+        }
+
         if (mood == EMOTIONS.LOVEY)
         {
             SetFace(FACE.LOVEY);
-        } else if (mood != EMOTIONS.PISSED) {
-            SetFace(FACE.HAPPY);
-        } else {
+        } else if (mood == EMOTIONS.PISSED) {
             SetFace(FACE.PISSED);
+        } else if (mood == EMOTIONS.ASLEEP) {
+            SetFace(FACE.ASLEEP);
+        } else {
+            SetFace(FACE.HAPPY);
         }
     }
 
@@ -466,7 +521,8 @@ public class Cat : MonoBehaviour {
         float hopInterval = 0.5f;
 
         // randomly change the wander angle in radians
-        wanderAngle = Random.Range(-Mathf.PI*2, Mathf.PI * 2);
+        //wanderAngle = Random.Range(-Mathf.PI*2, Mathf.PI * 2);
+        var wanderDir = Mathf.FloorToInt(Random.Range(0, 3));
 
         // rotate to face the direction of hop
         //RotateTowardsTarget(rbody.velocity);
@@ -478,11 +534,12 @@ public class Cat : MonoBehaviour {
         if (hopTimer > hopInterval)
         {
             hopTimer -= hopInterval;
+            Roll((ORIENTATION)wanderDir);
             //Vector3 dir = new Vector3(Mathf.Cos(wanderAngle), 0, Mathf.Sin(wanderAngle));
-            Vector3 dir = transform.forward;
+            /*Vector3 dir = transform.forward;
             Vector3 force = 0.5f * (dir + Vector3.up);
             rbody.AddRelativeTorque(0, wanderAngle, 0);
-            rbody.AddForce(force);
+            rbody.AddForce(force);*/
         }
     }
 
@@ -516,7 +573,7 @@ public class Cat : MonoBehaviour {
 
         float hopInterval = 0.5f;
 
-        // randomly change the wander angle in radians
+        // randomly change the wander angle in radians??
         wanderAngle = Random.Range(-Mathf.PI * 2, Mathf.PI * 2);
 
         // hop every so often
@@ -527,17 +584,16 @@ public class Cat : MonoBehaviour {
         {
             hopTimer -= hopInterval;
             //Vector3 dir = new Vector3(Mathf.Cos(wanderAngle), 0, Mathf.Sin(wanderAngle));
-            Vector3 dir = transform.forward;
+            //Vector3 dir = transform.forward;
+            Vector3 dir = Random.insideUnitSphere.normalized;
             Vector3 force = 1.5f * (dir + Vector3.up);
-            rbody.AddRelativeTorque(0, wanderAngle / 100, 0);
+            //rbody.AddRelativeTorque(0, wanderAngle, 0);
             rbody.AddForce(force);
         }
     }
 
     void FlipUpwards()
     {
-        // how much force to rotate with
-        float force = 1200f;
         // jump up
         //rbody.AddForce(new Vector3(0, 2f, 0));
 
@@ -545,30 +601,45 @@ public class Cat : MonoBehaviour {
         rbody.maxAngularVelocity = 10000;
 
         // rotate
-        switch (orientation)
+        Roll(orientation);
+    }
+
+    void Roll(ORIENTATION face)
+    {
+        switch (face)
         {
             case ORIENTATION.SIDEWAYS_LEFT:
-                rbody.AddRelativeTorque(new Vector3(0, 0, force),ForceMode.Acceleration);
+                rbody.AddRelativeTorque(new Vector3(0, 0, rollForce), ForceMode.Acceleration);
                 break;
             case ORIENTATION.SIDEWAYS_RIGHT:
-                rbody.AddRelativeTorque(new Vector3(0, 0, -force), ForceMode.Acceleration);
+                rbody.AddRelativeTorque(new Vector3(0, 0, -rollForce), ForceMode.Acceleration);
                 break;
             case ORIENTATION.UPSIDE_DOWN:
-                rbody.AddRelativeTorque(new Vector3(1.5f*force, 0, 0), ForceMode.Acceleration);
+                rbody.AddRelativeTorque(new Vector3(1.5f * rollForce, 0, 0), ForceMode.Acceleration);
                 break;
             case ORIENTATION.FACE_DOWN:
-                rbody.AddRelativeTorque(new Vector3(-force, 0, 0), ForceMode.Acceleration);
+                rbody.AddRelativeTorque(new Vector3(-rollForce, 0, 0), ForceMode.Acceleration);
                 break;
             case ORIENTATION.ON_BACK:
-                rbody.AddRelativeTorque(new Vector3(force, 0, 0), ForceMode.Acceleration);
+                rbody.AddRelativeTorque(new Vector3(rollForce, 0, 0), ForceMode.Acceleration);
                 break;
         }
-        
-        
     }
 
     void OnCollisionEnter(Collision collision)
     {
+        // wander if not on sleepy thing
+        if (collision.collider.tag == "Soft")
+        {
+            boredom = 0;
+            mood = EMOTIONS.ASLEEP;
+            print("asleep");
+        }
+        else
+        {
+            boredom = 12;
+            mood = EMOTIONS.BORED;
+        }
         // hit another cat
         if (collision.gameObject.GetComponent<Cat>())
         {
@@ -581,6 +652,10 @@ public class Cat : MonoBehaviour {
             else if (collision.gameObject.GetComponent<Cat>().pissCounter >= 10)
             {
                 pissCounter = 10;
+            } else if (collision.gameObject.GetComponent<Cat>().mood == EMOTIONS.ASLEEP)
+            {
+                boredom = 0;
+                mood = EMOTIONS.ASLEEP;
             }
         }
 
