@@ -49,12 +49,6 @@ public class Cat : MonoBehaviour {
     // cat flags { flipping }
     Dictionary<string, bool> flags;
 
-    // store wander direction for more interesting movement
-    ORIENTATION wanderDir = ORIENTATION.UPSIDE_DOWN;
-
-    // last position when moved
-    Vector3 prevWanderPos = Vector3.zero;
-
     // is a toy visible?
     bool watchingPrey = false;
 
@@ -320,7 +314,7 @@ public class Cat : MonoBehaviour {
             claws != null) return;
 
         // only when NOT MOVING
-        if (GetComponent<Rigidbody>().velocity.sqrMagnitude > 0 &&
+        if (rbody.velocity.sqrMagnitude > 0.1f &&
             mood != EMOTIONS.ASLEEP && mood != EMOTIONS.BORED)
         {
             return;
@@ -339,7 +333,7 @@ public class Cat : MonoBehaviour {
         } else
         {
             // if the cat is not right side up, flip
-            flipTimer += Time.fixedDeltaTime;
+            flipTimer += 2f*Time.fixedDeltaTime;
             // flip
             if (flipTimer > waitBeforeFlipDuration)
             {
@@ -522,23 +516,19 @@ public class Cat : MonoBehaviour {
 
     void Wander()
     {
-        float hopInterval = 0.5f;
+        float hopInterval = 0.2f;
 
         // hop every so often
         hopTimer += Time.fixedDeltaTime;
 
-        // if no significant movement, pick new direction
-        if ((prevWanderPos-transform.position).sqrMagnitude < 0.2)
-        {
-            wanderDir = (ORIENTATION)Mathf.FloorToInt(Random.Range(0, 3));
-        }
-
         // move the cat
         if (hopTimer > hopInterval)
         {
-            prevWanderPos = transform.position;
             hopTimer -= hopInterval;
-            Roll(wanderDir);
+            rbody.AddForce(transform.forward*0.3f + Vector3.up * 0.2f);
+
+            // turn if an obstacle is coming
+
         }
     }
 
@@ -570,6 +560,9 @@ public class Cat : MonoBehaviour {
 
     void FlipUpwards()
     {
+        // FOR CRYING OUT LOUD STOP FLIPPING IN MIDAIR
+        if (rbody.velocity.sqrMagnitude > 0.1) { print("moving, no flip"); return; }
+
         // jump up
         rbody.AddForce(new Vector3(0, 1f, 0));
 
