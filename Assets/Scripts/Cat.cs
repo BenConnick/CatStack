@@ -46,6 +46,8 @@ public class Cat : MonoBehaviour {
     // number of possible skins
     int numCatTypes;
 
+    Vector3 wanderPrevPos = Vector3.zero;
+
     // cat flags { flipping }
     Dictionary<string, bool> flags;
 
@@ -116,6 +118,8 @@ public class Cat : MonoBehaviour {
 
     AudioSource aSource;
 
+    Transform modelRoot;
+
     bool belongsToPlayer = false;
     public bool BelongsToPlayer
     {
@@ -133,6 +137,7 @@ public class Cat : MonoBehaviour {
 
     // Use this for initialization
     void Start () {
+        modelRoot = transform.Find("root");
         var mesh = transform.FindChild("Mesh");
         SMRenderer = mesh.GetComponentInChildren<SkinnedMeshRenderer>();
         numCatTypes = CatSkins.Length;
@@ -141,10 +146,18 @@ public class Cat : MonoBehaviour {
         rbody = GetComponent<Rigidbody>();
         flags = new Dictionary<string, bool>();
         flags.Add("flipping", false);
+        flags.Add("activated", false);
+    }
+
+    public void Activate()
+    {
+        flags["activated"] = true;
     }
 	
 	// Update is called once per frame
 	void FixedUpdate () {
+        // only update if active
+        if (!flags["activated"]) return;
 
         // DEBUG
         if (debugOn)
@@ -195,7 +208,7 @@ public class Cat : MonoBehaviour {
     void HandleBehaviors()
     {
         // always watchful
-        LookAround();
+        LookForToys();
         // prey found?
         if (watchingPrey)
         {
@@ -240,7 +253,7 @@ public class Cat : MonoBehaviour {
 
         Vector3 dir = (Manager.instance.ActiveToy.position - transform.position).normalized;
         Vector3 force = 2.5f * dir;
-        rbody.AddForce(force);
+        rbody.AddForce(force,ForceMode.VelocityChange);
     }
 
     // stare at a cat toy
@@ -249,12 +262,14 @@ public class Cat : MonoBehaviour {
         // if there is no toy, give up
         if (Manager.instance.ActiveToy == null)
             watchingPrey = false;
+
         // if not watching, then you are here by mistake
         if (!watchingPrey)
             return;
 
         // deplete interest in toy
         toyTimer += 2 * Time.fixedDeltaTime;
+
         // attention span depleted
         if (toyTimer > maxToyTimer)
         {
@@ -271,13 +286,18 @@ public class Cat : MonoBehaviour {
             // to vec
             Vector3 toVec = Manager.instance.ActiveToy.position - transform.position;
 
-            //transform.forward.rotate
-            transform.forward = Vector3.RotateTowards(transform.forward, toVec, Time.deltaTime, 0);
+            Debug.DrawRay(transform.position, toVec);
+
+            Debug.DrawRay(transform.position, transform.forward, Color.black);
+
+            float angle = Vector3.Angle(toVec, transform.forward);
+
+            modelRoot.localRotation = Quaternion.Euler(0, -angle, -90);
         }
     }
 
     // checks to see if there is a cat toy visible
-    void LookAround()
+    void LookForToys()
     {
         // no distractions
         if (Manager.instance.ActiveToy == null)
@@ -404,17 +424,17 @@ public class Cat : MonoBehaviour {
             mood = EMOTIONS.PISSED;
             return;
         }
+        // asleep?
+        if (mood == EMOTIONS.ASLEEP)
+        {
+            // keep sleeping until interrupted
+            return;
+        }
         // love?
         if (loveyTimer > 0)
         {
             mood = EMOTIONS.LOVEY;
             return;
-        }
-        // asleep?
-        if (mood == EMOTIONS.ASLEEP)
-        {
-            // keep sleeping until interrupted
-            return; 
         }
         // bored
         /*if (boredom >= maxBoredom)
@@ -522,13 +542,22 @@ public class Cat : MonoBehaviour {
         hopTimer += Time.fixedDeltaTime;
 
         // move the cat
-        if (hopTimer > hopInterval)
+        if (hopTimer > hopInterval && rbody.velocity.sqrMagnitude == 0)
         {
+            // reset interval
             hopTimer -= hopInterval;
-            rbody.AddForce(transform.forward*0.3f + Vector3.up * 0.2f);
 
-            // turn if an obstacle is coming
+            // turn if stuck
+            if ((transform.position - wanderPrevPos).sqrMagnitude < 0.001f)
+            {
+                transform.Rotate(new Vector3(0, Random.value > 1 ? 90 : -90, 0));
+            }
 
+            // record position
+            wanderPrevPos = transform.position;
+
+            // hop
+            rbody.AddForce((Vector3.ProjectOnPlane(transform.forward,Vector3.up) + Vector3.up) * 1.1f,ForceMode.VelocityChange);
         }
     }
 
@@ -552,19 +581,18 @@ public class Cat : MonoBehaviour {
 
     void RageHop()
     {
-        print("rage hop");
         Vector3 dir = Random.insideUnitSphere.normalized;
-        Vector3 force = 2.5f * (dir + Vector3.up).normalized;
-        rbody.AddForce(force);
+        Vector3 force = 5.0f * (dir + Vector3.up).normalized;
+        rbody.AddForce(force,ForceMode.VelocityChange);
     }
 
     void FlipUpwards()
     {
         // FOR CRYING OUT LOUD STOP FLIPPING IN MIDAIR
-        if (rbody.velocity.sqrMagnitude > 0.1) { print("moving, no flip"); return; }
+        if (rbody.velocity.sqrMagnitude > 0.1) return;
 
         // jump up
-        rbody.AddForce(new Vector3(0, 1f, 0));
+        rbody.AddForce(new Vector3(0, 2f, 0),ForceMode.VelocityChange);
 
         // max angular velocity
         rbody.maxAngularVelocity = 10000;
@@ -574,18 +602,17 @@ public class Cat : MonoBehaviour {
         StartCoroutine(AlignWithFloor(orientation));
     }
 
-
     IEnumerator AlignWithFloor(ORIENTATION currentFace)
     {
-        print("y position: " + transform.position.y);
-        print(Time.time);
-        yield return new WaitForSeconds(0.1f);
-        print("y position: " + transform.position.y);
-        print(Time.time);
-        rbody.AddRelativeTorque(+0.4f*GetRollForceVector(currentFace),ForceMode.Acceleration);
-        yield return new WaitForSeconds(0.1f);
-        print(Time.time);
-        rbody.AddRelativeTorque(-0.4f*GetRollForceVector(currentFace), ForceMode.Acceleration);
+        flags["flipping"] = true;
+
+        yield return new WaitForSeconds(0.15f);
+        rbody.AddRelativeTorque(+0.004f*GetRollForceVector(currentFace),ForceMode.VelocityChange);
+
+        yield return new WaitForSeconds(0.15f);
+        rbody.AddRelativeTorque(-0.004f * GetRollForceVector(currentFace), ForceMode.VelocityChange);
+
+        flags["flipping"] = false;
     }
 
     void Roll(ORIENTATION face)
@@ -630,17 +657,6 @@ public class Cat : MonoBehaviour {
 
     void OnCollisionEnter(Collision collision)
     {
-        // wander if not on sleepy thing
-        if (collision.collider.tag == "Soft")
-        {
-            boredom = 0;
-            mood = EMOTIONS.ASLEEP;
-            print("asleep");
-        }
-        else
-        {
-            boredom = 12;
-        }
         // hit another cat
         if (collision.gameObject.GetComponent<Cat>())
         {
@@ -648,15 +664,37 @@ public class Cat : MonoBehaviour {
             if (collision.relativeVelocity.sqrMagnitude > 10)
             {
                 pissCounter = 10;
+                RageHop();
             }
             // already angry cat, auto angry
             else if (collision.gameObject.GetComponent<Cat>().pissCounter >= 10)
             {
                 pissCounter = 10;
-            } else if (collision.gameObject.GetComponent<Cat>().mood == EMOTIONS.ASLEEP)
+                RageHop();
+            }
+            // hit a sleepy cat
+            else if (collision.gameObject.GetComponent<Cat>().mood == EMOTIONS.ASLEEP)
             {
                 boredom = 0;
                 mood = EMOTIONS.ASLEEP;
+            }
+        }
+        else
+        {
+            // wander if not on sleepy thing
+            if (collision.collider.tag == "Soft")
+            {
+                boredom = 0;
+                mood = EMOTIONS.ASLEEP;
+            }
+            else
+            {
+                if (mood == EMOTIONS.PISSED)
+                {
+                    RageHop();
+                }
+                boredom = 12;
+                mood = EMOTIONS.BORED;
             }
         }
 
@@ -687,11 +725,6 @@ public class Cat : MonoBehaviour {
                 aSource.Play();
                 meowTimer = 0; // reuse meow timer 
             }
-        }
-
-        if (mood == EMOTIONS.PISSED)
-        {
-            RageHop();
         }
     }
 

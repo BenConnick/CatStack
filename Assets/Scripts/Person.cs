@@ -227,6 +227,7 @@ public class Person : MonoBehaviour {
             playSound(sounds[2]);
             spawnerComponent.LaunchCat(heldCat, new Vector3(1,tossHeight,0));
             heldCat.BelongsToPlayer = true; // start checking if the cat is out of bounds
+            heldCat.Activate();
             heldCat = null;
         }
     }
@@ -278,6 +279,10 @@ public class Person : MonoBehaviour {
     {
         // grab the cat
         heldCat = cat;
+
+        // disable collider
+        heldCat.GetComponent<Collider>().enabled = false;
+
         // if the player is still holding on
         if (heldCat.GetComponent<FixedJoint>())
         {
@@ -306,7 +311,7 @@ public class Person : MonoBehaviour {
 
     void OnCollisionEnter(Collision col)
     {
-        print("hit " + col.collider.name);
+        //print("hit " + col.collider.name);
 
         // if this is hit by a cat
         Cat cat = col.gameObject.GetComponent<Cat>();
