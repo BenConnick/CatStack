@@ -130,7 +130,7 @@ public class Door : MonoBehaviour {
             angularSpeed = 0;
         }
 
-        if (angle < 2)
+        if (angle < 0.1f)
         {
             DoorClosed();
             angle = 0;

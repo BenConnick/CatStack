@@ -31,8 +31,8 @@ public class Cat : MonoBehaviour {
     float pettingInterval = 2f;
     // how long before the cat leaps at the toy
     float attackTimer = 0f;
-    float minAttackWait = 1f;
-    float maxAttackWait = 5f;
+    float minAttackWait = 0.1f;
+    float maxAttackWait = 2f;
     // how long is a toy entertaining?
     float toyTimer = 0f;
     float toyAttentionThreshold = 5f;
@@ -81,7 +81,7 @@ public class Cat : MonoBehaviour {
     float hopTimer = 0;
 
     // emotions
-    enum EMOTIONS {  LOVEY, HAPPY, BORED, PISSED, ASLEEP }
+    enum EMOTIONS {  LOVEY, HAPPY, BORED, PISSED, ASLEEP, GRABBED }
 
     // orientation
     enum ORIENTATION { SIDEWAYS_LEFT, UPSIDE_DOWN, SIDEWAYS_RIGHT, RIGHT_SIDE_UP, FACE_DOWN, ON_BACK }
@@ -153,9 +153,14 @@ public class Cat : MonoBehaviour {
     {
         flags["activated"] = true;
     }
-	
-	// Update is called once per frame
-	void FixedUpdate () {
+
+    public void Deactivate()
+    {
+        flags["activated"] = false;
+    }
+
+    // Update is called once per frame
+    void FixedUpdate () {
         // only update if active
         if (!flags["activated"]) return;
 
@@ -207,12 +212,14 @@ public class Cat : MonoBehaviour {
 
     void HandleBehaviors()
     {
-        // always watchful
-        LookForToys();
         // prey found?
         if (watchingPrey)
         {
             StalkPreyThenAttack();
+        } else
+        {
+            // always watchful
+            LookForToys();
         }
 
         // mood based behaviors
@@ -234,15 +241,11 @@ public class Cat : MonoBehaviour {
     // handles timer for "attack"
     void StalkPreyThenAttack()
     {
+        // stare
         Stare();
-        if (attackTimer < 0)
-        {
-            Attack();
-        }
-        else
-        {
-            attackTimer -= Time.fixedDeltaTime;
-        }
+        attackTimer -= Time.fixedDeltaTime;
+        // attack in intervals
+        if (attackTimer < 0) { Attack(); }
     }
 
     // jump towards the current toy
@@ -252,8 +255,10 @@ public class Cat : MonoBehaviour {
         watchingPrey = false;
 
         Vector3 dir = (Manager.instance.ActiveToy.position - transform.position).normalized;
-        Vector3 force = 2.5f * dir;
+        Vector3 force = 2.5f * dir + Vector3.up * 0.5f;
         rbody.AddForce(force,ForceMode.VelocityChange);
+
+        attackTimer = Random.Range(minAttackWait, maxAttackWait); ;
     }
 
     // stare at a cat toy
@@ -268,7 +273,7 @@ public class Cat : MonoBehaviour {
             return;
 
         // deplete interest in toy
-        toyTimer += 2 * Time.fixedDeltaTime;
+        //toyTimer += 2 * Time.fixedDeltaTime;
 
         // attention span depleted
         if (toyTimer > maxToyTimer)
@@ -290,9 +295,17 @@ public class Cat : MonoBehaviour {
 
             Debug.DrawRay(transform.position, transform.forward, Color.black);
 
-            float angle = Vector3.Angle(toVec, transform.forward);
+            float flip = -1;
+            if (toVec.x > 0)
+            {
+                flip = 1;
+            }
 
-            modelRoot.localRotation = Quaternion.Euler(0, -angle, -90);
+            float angle = flip * Vector3.Angle(Vector3.ProjectOnPlane(toVec,Vector3.up), Vector3.forward);
+
+            //modelRoot.localRotation = Quaternion.Euler(0, -angle, -90);
+
+            transform.localRotation = Quaternion.Euler(0, angle, 0);
         }
     }
 
@@ -582,7 +595,7 @@ public class Cat : MonoBehaviour {
     void RageHop()
     {
         Vector3 dir = Random.insideUnitSphere.normalized;
-        Vector3 force = 5.0f * (dir + Vector3.up).normalized;
+        Vector3 force = dir + Vector3.up * 5 * Mathf.Clamp(1 - transform.position.y,0,1);
         rbody.AddForce(force,ForceMode.VelocityChange);
     }
 
@@ -726,6 +739,16 @@ public class Cat : MonoBehaviour {
                 meowTimer = 0; // reuse meow timer 
             }
         }
+    }
+
+    public void Grabbed()
+    {
+        Deactivate();
+    }
+
+    public void Released()
+    {
+        Activate();
     }
 
     void OnTriggerEnter(Collider col)

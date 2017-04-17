@@ -9,6 +9,8 @@ public class Person : MonoBehaviour {
 
     public float WalkSpeed;
 
+    public Material[] skins;
+
     public AudioClip[] sounds; // set in inspector
     // 0: correct, 1: incorrect, 2: throw cat
 
@@ -54,6 +56,8 @@ public class Person : MonoBehaviour {
 
     bool soundLocked;
 
+    Material skin;
+
     // reusable timer
     float timer;
 
@@ -78,6 +82,10 @@ public class Person : MonoBehaviour {
     // Use this for initialization
     void Start() {
 
+        // random skin
+        skin = skins[Mathf.FloorToInt(Random.Range(0, skins.Length))];
+        GetComponent<MeshRenderer>().material = skin;
+
         a = gameObject.AddComponent<AudioSource>();
 
         // get component reference
@@ -92,7 +100,7 @@ public class Person : MonoBehaviour {
         door = GameObject.Find("Door").GetComponent<Door>();
 
         // calculate doormat location
-        doormatLocation = door.transform.position - Vector3.right + Vector3.forward * 0.5f;
+        doormatLocation = door.transform.position - Vector3.right * 0.7f + Vector3.forward * 0.5f;
         //Debug.DrawLine(doormatLocation, Vector3.zero, Color.red, 10);
 
         // start with a cat
@@ -279,6 +287,9 @@ public class Person : MonoBehaviour {
     {
         // grab the cat
         heldCat = cat;
+
+        // deactivate cat
+        heldCat.Deactivate();
 
         // disable collider
         heldCat.GetComponent<Collider>().enabled = false;
